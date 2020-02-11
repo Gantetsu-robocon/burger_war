@@ -4,6 +4,9 @@
 
     <!-- You can change control program  -->
 
+<!-- practuc  -->
+
+
     <!-- Arguments -->
   <arg name="map_file" default="$(find burger_navigation)/maps/map.yaml"/>
   <arg name="open_rviz" default="true"/>
