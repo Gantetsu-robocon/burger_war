@@ -147,3 +147,11 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+#vscode
+/.vscode
+
+#for Debug
+*.gv
+frames.pdf
+
