@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+<!-- enemy bot run  blue side-->
+  <node pkg="burger_war" type="transform_enemy_pose.py" name="enemy_tf_broadcaster" output="screen"/>
+  <node pkg="burger_war" type="pub_enemy_abs.py" name="pub_enemy_abs" output="screen"/>
+  
+  
+
+</launch>

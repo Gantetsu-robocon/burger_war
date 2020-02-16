@@ -7,7 +7,10 @@ import roslib
 import rospy
 import tf2_ros
 import tf_conversions
+import tf
+import math 
 from geometry_msgs.msg import PoseStamped 
+from geometry_msgs.msg import Quaternion
 
 class PubEnemyPose():
 
@@ -15,6 +18,10 @@ class PubEnemyPose():
         self.enemy_ps = PoseStamped()
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
+
+        q = tf.transformations.quaternion_from_euler(0.0, 0.0, math.pi)
+        rotation = Quaternion(*q)
+        self.enemy_ps.pose.orientation = rotation
 
         self.enemy_pub = rospy.Publisher('abs_enemy_pos', PoseStamped, queue_size=10)
 

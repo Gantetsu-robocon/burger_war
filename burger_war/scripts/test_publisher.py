@@ -4,6 +4,8 @@
 
 # pythonでROSのソフトウェアを記述するときにimportするモジュール
 import rospy
+import math
+import tf
 from geometry_msgs.msg import PoseStamped 
 
 def para_in():
@@ -17,9 +19,11 @@ def para_in():
     # 1秒間にpublishする数の設定
     r = rospy.Rate(5)
 
-    para_x = 0.0
+    para_x = 2.6
     para_y = 0.0
-    para_theta = 1.0
+    para_z = 0.0
+
+    q = tf.transformations.quaternion_from_euler(0.0, 0.0, math.pi)
 
     # Adder型のmessageのインスタンスを作る
     msg = PoseStamped()
@@ -30,7 +34,11 @@ def para_in():
 
         msg.pose.position.x = para_x
         msg.pose.position.y = para_y
-        msg.pose.orientation.w = para_theta
+        msg.pose.position.z = para_z
+        msg.pose.orientation.x = q[0]
+        msg.pose.orientation.y = q[1]
+        msg.pose.orientation.z = q[2]
+        msg.pose.orientation.w = q[3]
 
         # publishする関数
         pub.publish(msg)

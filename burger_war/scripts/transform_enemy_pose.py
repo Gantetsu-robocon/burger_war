@@ -6,15 +6,22 @@
 import rospy
 import tf2_ros
 import tf_conversions
+import tf
+import math
 from geometry_msgs.msg import PoseStamped 
 from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import Quaternion
 
 class TransformEnemy():
 
     def __init__(self):
         self.br = tf2_ros.TransformBroadcaster()
         self.enemy_ps = PoseStamped()
-        self.enemy_sub = rospy.Subscriber('relative_pose', PoseStamped, self.enemyCallback)
+        self.enemy_sub = rospy.Subscriber('/relative_pose', PoseStamped, self.enemyCallback)
+
+        q = tf.transformations.quaternion_from_euler(0.0, 0.0, math.pi)
+        rotation = Quaternion(*q)
+        self.enemy_ps.pose.orientation = rotation
 
     def tf_enemy_pose(self):
         rate = rospy.Rate(1.0)
