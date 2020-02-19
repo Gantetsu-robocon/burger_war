@@ -6,17 +6,16 @@ import smach
 import smach_ros
 import random
 
-from geometry_msgs.msg import Twist
-
-
 class search_mode(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['enemy','flag'])
 
-    def execute(self):
+    def execute(self,userdata):
         #search progarm enemy  or flag
-        value = random.randint(1,2)
-        if value == 1:
+        rospy.loginfo('Executing state search_mode')
+        value = random.randint(1,1000)
+        print(value)
+        if value < 500:
             return 'enemy'
         else:
             return 'flag'
@@ -25,7 +24,7 @@ class go_enemy(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['success'])
 
-    def execute(self):
+    def execute(self,userdata):
         rospy.loginfo('Executing state go_enemy')
         rospy.sleep(1)
         return 'success'
@@ -33,12 +32,12 @@ class go_enemy(smach.State):
     
 class go_flag(smach.State):
     def __init__(self):
-        smach.State.__init__(self,outcomes=['success'])
+        smach.State.__init__(self,outcomes=['enemy'])
 
-    def execute(self):
+    def execute(self,userdata):
         rospy.loginfo('Executing state go_flag')
         rospy.sleep(1)
-        return 'success'
+        return 'enemy'
 
     
 
@@ -56,7 +55,7 @@ def main():
         smach.StateMachine.add('enemy', go_enemy(), 
                                transitions={'success':'success'})
         smach.StateMachine.add('flag', go_flag(), 
-                               transitions={'success':'success'})
+                               transitions={'enemy':'enemy'})
 
     # Create and start the introspection server
     sis = smach_ros.IntrospectionServer('server_name', sm, '/SM_ROOT')
