@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # license removed for brevity
 
-# pythonでROSのソフトウェアを記述するときにimportするモジュール
+# 敵ポジション取得プログラム確認用
 import rospy
 import math
 import tf

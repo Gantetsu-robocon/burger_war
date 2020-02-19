@@ -16,6 +16,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
+import tf
 
 
 class EnemyBot(object):
@@ -23,9 +24,9 @@ class EnemyBot(object):
         # カメラ画像上での赤マーカ位置
         self.CP = [0,0]
         # velocity publisher
-        self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=1)
-                # velocity publisher
-        self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
+        self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)
+        # velocity publisher
+        #self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
 
         # camera subscribver
         # please uncoment out if you use camera
@@ -47,7 +48,13 @@ class EnemyBot(object):
             pose = PoseStamped()
             pose.pose.position.x = self.CP[1]
             pose.pose.position.y = self.CP[0]
-            pose.pose.orientation.z = 0
+            euler_z = 0 # dummy
+
+            q = tf.transformations.quaternion_from_euler(0.0, 0.0, euler_z)
+            pose.pose.orientation.x = q[0]
+            pose.pose.orientation.y = q[1]
+            pose.pose.orientation.z = q[2]
+            pose.pose.orientation.w = q[3]
 
             # publish twist topic
             self.relative_pose_pub.publish(pose)
@@ -78,7 +85,7 @@ class EnemyBot(object):
         cv2.waitKey(1)
 
 if __name__ == '__main__':
-    rospy.init_node('all_sensor_sample')
+    rospy.init_node('relative_enemy_camera')
     bot = EnemyBot(use_camera=True)
     bot.strategy()
 

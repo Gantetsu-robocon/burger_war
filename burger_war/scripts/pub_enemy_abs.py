@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 #Get enemy absolute position from TF and publish enemy position as absolute_pose
-
 import roslib
 import rospy
 import tf2_ros
@@ -23,7 +22,7 @@ class PubEnemyPose():
         rotation = Quaternion(*q)
         self.enemy_ps.pose.orientation = rotation
 
-        self.enemy_pub = rospy.Publisher('abs_enemy_pos', PoseStamped, queue_size=10)
+        self.enemy_pub = rospy.Publisher('absolute_pos', PoseStamped, queue_size=10)
 
     def lis_pub_enemy_pose(self):
         rate = rospy.Rate(5)
