@@ -167,7 +167,7 @@ class StatusWindow:
         pos_w = self.objects_info[ob]["position"]["y"]
         # print(pos_h, pos_w)
         
-        img = cv2.imread(self.script_dir + "/picture/" + self.objects_info[ob]["name"] + ".png",-1)
+        img = cv2.imread(self.script_dir + "/picture/" + self.objects_info[ob]["name"] + ".png.bac",-1)
         img, mask = self.getMask(img, height=self.objects_info[ob]["size"]["height"], width=self.objects_info[ob]["size"]["width"])
         height, width = img.shape[:2]
         # print(height, width)
