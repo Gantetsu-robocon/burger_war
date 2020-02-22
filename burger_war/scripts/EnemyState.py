@@ -44,8 +44,9 @@ class EnemyBot(object):
         while not rospy.is_shutdown():
             # update PoseStamped
             pose = PoseStamped()
-            pose.pose.position.x = 0
-            pose.pose.position.y = 0
+            pose.pose.position.y = 0.0043*self.cam_Point_y + 0.5616
+            pose.pose.position.x = ((1.3995*pose.pose.position.y + 0.1041)*(340-self.cam_Point_x) +(-19.317*pose.pose.position.y+7.1838)) / 1000
+            #print(pose.pose.position.x , pose.pose.position.y)
             euler_z = 0 # dummy
 
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, euler_z)
@@ -117,7 +118,7 @@ class EnemyBot(object):
 
         # 色重心
         self.cam_Point_x , self.cam_Point_y , self.cam_Point_size = self.ColorCenter()
-        print(self.cam_Point_x , self.cam_Point_y , self.cam_Point_size)
+        #print(self.cam_Point_x , self.cam_Point_y , self.cam_Point_size)
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
 
