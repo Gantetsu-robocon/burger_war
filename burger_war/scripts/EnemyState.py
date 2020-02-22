@@ -98,12 +98,11 @@ class EnemyBot(object):
                 center_max_x = center_x
                 center_max_y = center_y
 
-        print(size_max)
         if size_max < 30:
             center_max_x = 0
             center_max_y = 0
             size_max = 0
-        print(size_max)
+
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 255, 255), 3)        
 
         return (center_max_x, center_max_y, size_max)
