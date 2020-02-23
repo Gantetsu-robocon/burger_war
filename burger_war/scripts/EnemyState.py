@@ -24,9 +24,15 @@ class EnemyBot(object):
         self.cam_Point_x = 0.0
         self.cam_Point_y = 0.0
         self.cam_Point_size = 0.0
-        # velocity publisher
-        self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)
 
+        # カメラ画像上でのARマーカ位置,サイズ
+        self.cam_AR_x = 0.0
+        self.cam_AR_y = 0.0
+        self.cam_AR_size = 0.0
+
+        # 相対位置座標 publisher
+        self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)
+        
         # camera subscribver
         # please uncoment out if you use camera
         if use_camera:
@@ -60,11 +66,6 @@ class EnemyBot(object):
 
             r.sleep()
 
-    def GetThresholdedImage(self,imgHSV):
-        imgResult = cv.CreateImage(cv.GetSize(imgHSV), cv.IPL_DEPTH_8U, 1)
-        cv.InRangeS(imgHSV, cv.Scalar(150, 160, 60), cv.Scalar(200, 256, 256), imgResult)
-        return imgResult
-
     def ColorCenter(self):
 #        self.img = cv2.rectangle(self.img, (0,360), (640,480), (0,0,0), -1)
         hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
@@ -74,8 +75,8 @@ class EnemyBot(object):
         bin_img = cv2.bitwise_and(self.img, self.img, mask = color_mask)
         bin_img = cv2.cvtColor(bin_img, cv2.COLOR_BGR2GRAY)
         nLabels, label_img, data, center = cv2.connectedComponentsWithStats(bin_img)
-        #print(nLabels)
         if nLabels < 2:
+            print("赤マーカが見つかりません") 
             return (0.0,0.0,0.0)
         size_max = 0
         size_max_x = 0
@@ -108,6 +109,32 @@ class EnemyBot(object):
 
         return (center_max_x, center_max_y, size_max)
 
+    def ARPointSearch(self):
+        aruco = cv2.aruco
+        dictionary = aruco.getPredefinedDictionary(aruco.DICT_ARUCO_ORIGINAL)
+
+        corners, ids, rejectedImgPoints = aruco.detectMarkers(self.img, dictionary)
+#        aruco.drawDetectedMarkers(self.img, corners, ids, (0,255,0))
+        if not corners:
+            print("ARが見つかりません") 
+            return (0,0,0)
+
+        ARsize_max = 0
+        ARcenter_max_x = 0
+        ARcenter_max_y = 0
+        ARsize = 0
+
+        for i in range(0, len(ids)):
+            ARsize = (corners[i][0][1][0]-corners[i][0][0][0])*(corners[i][0][2][1]-corners[i][0][1][1])
+            
+            if ARsize_max < ARsize:
+                if ARsize > 200:
+                    ARcenter_max_x = (corners[i][0][0][0] + corners[i][0][1][0] + corners[i][0][2][0] + corners[i][0][3][0])/4
+                    ARcenter_max_y = (corners[i][0][0][1] + corners[i][0][1][1] + corners[i][0][2][1] + corners[i][0][3][1])/4
+                    ARsize_max = ARsize
+
+        return (ARcenter_max_x,ARcenter_max_y,ARsize_max)
+
     # camera image call back sample
     # comvert image topic to opencv object and show
     def imageCallback(self, data):
@@ -116,9 +143,11 @@ class EnemyBot(object):
         except CvBridgeError as e:
             rospy.logerr(e)
 
-        # 色重心
+        # 敵の赤マーカ探索
         self.cam_Point_x , self.cam_Point_y , self.cam_Point_size = self.ColorCenter()
-        #print(self.cam_Point_x , self.cam_Point_y , self.cam_Point_size)
+        # ARマーカ探索（得点ゲットに使うものではなく、経路決定に使用するもの）
+        self.cam_AR_x , self.cam_AR_y , self.cam_AR_size = self.ARPointSearch()
+
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
 
@@ -126,4 +155,3 @@ if __name__ == '__main__':
     rospy.init_node('relative_enemy_camera')
     bot = EnemyBot(use_camera=True)
     bot.strategy()
-
