@@ -156,7 +156,7 @@ class SendPriorityGoal(object):
                     point = float(self.target_states[target_name]["point"])
                 dist = float(self.target_states[target_name]["distance"])
                 #TODO 優先度の算出
-                self.target_states[target_name]["priority"] = point -2*dist
+                self.target_states[target_name]["priority"] = -dist #+point
 
     def serverCallback(self, data):
         server_data = json.loads(data.data)
@@ -181,7 +181,7 @@ class SendPriorityGoal(object):
     def show_state(self): # for debug
         print("{}".format(json.dumps(self.target_states,indent=4)))
 
-    def send_goal(self,goal_point):
+    def send_goal(self,goal_name,goal_point):
         self.goal.target_pose.pose.position.x = goal_point[0]
         self.goal.target_pose.pose.position.y = goal_point[1]
 
@@ -189,9 +189,11 @@ class SendPriorityGoal(object):
         self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
 
         self.action.send_goal(self.goal)
-        self.action.wait_for_result(rospy.Duration(30))
+        succeeded = self.action.wait_for_result(rospy.Duration(30))
+        if succeeded:
+            self.target_states[goal_name]["priority"] = -999
 
-    def top_priotity_target(self):
+    def top_priority_target(self):
         top_pri_name = "Tomato_N"
         for target_name_i in self.target_states:
             if self.target_states[target_name_i]["priority"] > self.target_states[top_pri_name]["priority"]:
@@ -202,9 +204,10 @@ class SendPriorityGoal(object):
         r = rospy.Rate(1)
         while not rospy.is_shutdown():
             self.target_priority_update()
-            top_priotity_point = self.target_states[self.top_priotity_target()]["pose"]
+            top_priority_name = self.top_priority_target()
+            top_priority_point = self.target_states[top_priority_name]["pose"]
             #print "top_priotity_target:",self.top_priotity_target()
-            self.send_goal(top_priotity_point)
+            self.send_goal(top_priority_name,top_priority_point)
             self.show_state()
             r.sleep()
 
