@@ -26,43 +26,43 @@ class SendPriorityGoal(object):
         #Initialize target position
         with open(current_dir+'/marker.json') as f:
             self.target_states = json.load(f)
-        self.target_states["Tomato_N"]["pose"] = [-0.53,0.605+self.focus_dist,-np.pi/2]
-        self.target_states["Tomato_S"]["pose"] = [-0.53,0.455-self.focus_dist,np.pi/2]
-        self.target_states["Omelette_N"]["pose"] = [0.53,0.605+self.focus_dist,-np.pi/2]
-        self.target_states["Omelette_S"]["pose"] = [0.53,0.455-self.focus_dist,np.pi/2]
-        self.target_states["Pudding_N"]["pose"] = [-0.53,-0.455+self.focus_dist,-np.pi/2]
-        self.target_states["Pudding_S"]["pose"] = [-0.53,-0.605-self.focus_dist,np.pi/2]
-        self.target_states["OctopusWiener_N"]["pose"] = [0.53, -0.455+self.focus_dist,-np.pi/2]
-        self.target_states["OctopusWiener_S"]["pose"] = [0.53,-0.605-self.focus_dist,np.pi/2]
-        self.target_states["FriedShrimp_N"]["pose"] = [0,0.175+self.focus_dist,-np.pi/2]
-        self.target_states["FriedShrimp_S"]["pose"] = [0,-0.175-self.focus_dist,np.pi/2]
-        self.target_states["FriedShrimp_W"]["pose"] = [-0.175-self.focus_dist,0,0]
-        self.target_states["FriedShrimp_E"]["pose"] = [0.175+self.focus_dist,0,np.pi]
+        self.target_states["Tomato_N"]["pose"][0] += self.focus_dist
+        self.target_states["Tomato_S"]["pose"][0] -= self.focus_dist
+        self.target_states["Omelette_N"]["pose"][0] += self.focus_dist 
+        self.target_states["Omelette_S"]["pose"][0] -= self.focus_dist
+        self.target_states["Pudding_N"]["pose"][0] += self.focus_dist
+        self.target_states["Pudding_S"]["pose"][0] -= self.focus_dist
+        self.target_states["OctopusWiener_N"]["pose"][0] += self.focus_dist
+        self.target_states["OctopusWiener_S"]["pose"][0] -= self.focus_dist
+        self.target_states["FriedShrimp_N"]["pose"][0] += self.focus_dist
+        self.target_states["FriedShrimp_S"]["pose"][0] -= self.focus_dist
+        self.target_states["FriedShrimp_W"]["pose"][1] += self.focus_dist
+        self.target_states["FriedShrimp_E"]["pose"][1] -= self.focus_dist
 
         #Initialize robot position
         self.enemy_pose = PoseStamped()
         self.my_pose = PoseStamped()
         if self.side == "r":
-            self.enemy_pose.pose.position.x = 0
-            self.enemy_pose.pose.position.y = 1.3
+            self.enemy_pose.pose.position.x = 1.3
+            self.enemy_pose.pose.position.y = 0 
             self.enemy_pose.pose.position.z = 0 
-            q = tf.transformations.quaternion_from_euler(0,0,-np.pi/2)
+            q = tf.transformations.quaternion_from_euler(0,0,np.pi)
             self.enemy_pose.pose.orientation = q
-            self.my_pose.pose.position.x = 0
-            self.my_pose.pose.position.y = -1.3
+            self.my_pose.pose.position.x = -1.3
+            self.my_pose.pose.position.y = 0
             self.my_pose.pose.position.z = 0 
-            q = tf.transformations.quaternion_from_euler(0,0,np.pi/2)
+            q = tf.transformations.quaternion_from_euler(0,0,0)
             self.my_pose.pose.orientation = q
         elif self.side == "b":
-            self.enemy_pose.pose.position.x = 0
-            self.enemy_pose.pose.position.y = -1.3
+            self.enemy_pose.pose.position.x = -1.3
+            self.enemy_pose.pose.position.y = 0 
             self.enemy_pose.pose.position.z = 0 
-            q = tf.transformations.quaternion_from_euler(0,0,np.pi/2)
+            q = tf.transformations.quaternion_from_euler(0,0,0)
             self.enemy_pose.pose.orientation = q
-            self.my_pose.pose.position.x = 0
-            self.my_pose.pose.position.y = 1.3
+            self.my_pose.pose.position.x = 1.3
+            self.my_pose.pose.position.y = 0
             self.my_pose.pose.position.z = 0 
-            q = tf.transformations.quaternion_from_euler(0,0,-np.pi/2)
+            q = tf.transformations.quaternion_from_euler(0,0,np.pi)
             self.my_pose.pose.orientation = q
         else:
             print "Wrong side paramaeter is set"
@@ -156,7 +156,7 @@ class SendPriorityGoal(object):
                     point = float(self.target_states[target_name]["point"])
                 dist = float(self.target_states[target_name]["distance"])
                 #TODO 優先度の算出
-                self.target_states[target_name]["priority"] = point - 0.5*dist
+                self.target_states[target_name]["priority"] = point -2*dist
 
     def serverCallback(self, data):
         server_data = json.loads(data.data)
@@ -202,7 +202,7 @@ class SendPriorityGoal(object):
         r = rospy.Rate(1)
         while not rospy.is_shutdown():
             self.target_priority_update()
-            top_priotity_point = self.target_states["Tomato_N"]["pose"]
+            top_priotity_point = self.target_states[self.top_priotity_target()]["pose"]
             #print "top_priotity_target:",self.top_priotity_target()
             self.send_goal(top_priotity_point)
             self.show_state()
