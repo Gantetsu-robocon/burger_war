@@ -4,7 +4,7 @@
 
     <!-- You can change control program  -->
 
-  <include file="$(find burger_navigation)/launch/burger_navigation ekf_amcl.launch">
+  <include file="$(find burger_navigation)/launch/burger_navigation_ekf_amcl.launch">
   </include>
 
     <!-- sample program node -->

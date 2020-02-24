@@ -13,7 +13,7 @@
   <arg name="initial_pose_y" default="0.0"/>
   <arg name="initial_pose_a" default="0.0"/>
   <arg name="slam_methods" default="gmapping" doc="slam type [gmapping, cartographer, hector, karto, frontier_exploration]"/>
-  <arg name="configuration_basename" default="turtlebot3_lds_2d.lua"/>
+  <arg name="configuration_basename" default="turtlebot3_lds_2d.lua"/> 
 
   <!-- TurtleBot3 -->
   <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
@@ -23,21 +23,47 @@
     <!-- Map server -->
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)">
   </node>
+
+
+  <!-- copy tf for ekf -->
+ 
+  <node pkg="burger_war" name="copy_tf_fp_bl" type="tf_copy_fp-bl.py" >
+  </node>
+  <node pkg="burger_war" name="copy_tf_bl_imu" type="tf_copy_bl-imu.py" >
+  </node>
+  <node pkg="burger_war" name="copy_tf_bl_ld" type="tf_copy_bl-ld.py" >
+  </node>
+  
     <!-- EKF -->
-  <include file="$(find burger_navigation)/launch/ekf_imu_odom.launch">
-  </include>
+    
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" output="screen" >
+        <rosparam command="load" file="$(find burger_navigation)/param/ekf_imu.yaml" />
+        <remap from="odom0" to="/odom" />  
+        <remap from="imu0"  to="/imu" />  
+        <!--<remap from="odom" to="odom_ekf"/>-->
+        <!--<remap from="base_footprint" to="base_footprint_2"/>-->
+  </node>   
+  
 
   <!-- AMCL -->
+  
   <node pkg="amcl" type="amcl" name="amcl">
     <rosparam file="$(find burger_navigation)/param/amcl.yaml" command="load" />
     <param name="initial_pose_x"            value="$(arg initial_pose_x)"/>
     <param name="initial_pose_y"            value="$(arg initial_pose_y)"/>
     <param name="initial_pose_a"            value="$(arg initial_pose_a)"/>
     <remap from="scan"                      to="$(arg scan_topic)"/>
-  </node>
+    
 
+    <!--param name="odom_frame_id"            value="odom_ekf"/> -->
+    <!-- <param name="base_frame_id"            value="base_footprint_2"/>  -->
+  
+  </node> 
+  
+  
 
   <!-- move_base -->
+  
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
     <rosparam file="$(find burger_navigation)/param/costmap_common_params_burger.yaml" command="load" ns="global_costmap" />
@@ -51,12 +77,13 @@
     <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
 
     <param name="local_costmap/global_frame"             value="odom"/>
-    <param name="local_costmap/robot_base_frame"             value="base_link"/>
+    <param name="local_costmap/robot_base_frame"             value="base_link_2"/>
     <param name="local_costmap/scan/sensor_frame"             value="base_scan"/>
-    <param name="global_costmap/robot_base_frame"            value="base_link"/>
+    <param name="global_costmap/robot_base_frame"            value="base_link_2"/>
     <param name="global_costmap/global_frame"            value="map"/>
     <param name="global_costmap/scan/sensor_frame"             value="base_scan"/>
-  </node>
+  </node> 
+  
 
   <!-- rviz -->
   <group if="$(arg open_rviz)"> 
