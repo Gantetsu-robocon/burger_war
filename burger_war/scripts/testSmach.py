@@ -5,12 +5,12 @@ import rospy
 import smach
 import smach_ros
 import random
+import YTest.py
+
 
 class search_mode(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['enemy','flag'],
-        input_keys = ['search_input'],
-        output_keys = ['search_output'])
+        smach.State.__init__(self, outcomes=['enemy','flag'],input_keys = ['search_input'],output_keys = ['search_output'])
 
     def execute(self,userdata):
         #search progarm enemy  or flag

@@ -1,77 +1,79 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
+import roslib; roslib.load_manifest('smach_tutorials')
 import rospy
 import smach
 import smach_ros
-import random
 
-from geometry_msgs.msg import Twist
+# define state Foo
+class Foo(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['outcome1','outcome2'])
+        self.counter = 0
+
+    def execute(self, userdata):
+        rospy.loginfo('Executing state FOO')
+        if self.counter < 3:
+            self.counter += 1
+            return 'outcome1'
+        else:
+            return 'outcome2'
 
 
-class StateMashine(smach.container.Container):
-    class YBot():
-        def __init__(self, bot_name="NoName",x = 0,th = 0):
-            # bot name 
-            self.name = bot_name
-            # velocity argument
-            self.vel_x = x 
-            self.vel_th = th 
-            # velocity publisher
-            self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
+# define state Bar
+class Bar(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['outcome1'])
 
-
-        def strategy(self):
-            r = rospy.Rate(1) # change speed 1fps
-            twist = Twist()
-            twist.linear.x = self.vel_x; twist.linear.y = 0; twist.linear.z = 0
-            twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = self.vel_th
-
-            target_speed = 0
-            target_turn = 0
-            control_speed = 0
-            control_turn = 0
-
-            if not rospy.is_shutdown():
-                print(twist)
-                self.vel_pub.publish(twist)
-
-                r.sleep()
-
-    def __init__(self, outcomes, inputkeys=[], output_keys=[]):
-        smach.container.Container.__init__(self, outcomes, input_keys, output_keys)
+    def execute(self, userdata):
+        rospy.loginfo('Executing state BAR')
+        return 'outcome1'
         
-        # bot name 
-        self.name = bot_name
-        # velocity argument
-        self.vel_x = x 
-        self.vel_th = th 
-        # velocity publisher
-        self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
 
 
-    def strategy(self):
-        r = rospy.Rate(1) # change speed 1fps
-        twist = Twist()
-        twist.linear.x = self.vel_x; twist.linear.y = 0; twist.linear.z = 0
-        twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = self.vel_th
+# define state Bas
+class Bas(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['outcome3'])
 
-        target_speed = 0
-        target_turn = 0
-        control_speed = 0
-        control_turn = 0
+    def execute(self, userdata):
+        rospy.loginfo('Executing state BAS')
+        return 'outcome3'
 
-        if not rospy.is_shutdown():
-            print(twist)
-            self.vel_pub.publish(twist)
 
-            r.sleep()
 
 
 def main():
-    rospy.init_node('Y_run')
-    bot = YBot('Y_test')
-    bot.strategy()
+    rospy.init_node('smach_example_state_machine')
+
+    # Create the top level SMACH state machine
+    sm_top = smach.StateMachine(outcomes=['outcome5'])
+    
+    # Open the container
+    with sm_top:
+
+        smach.StateMachine.add('BAS', Bas(),
+                               transitions={'outcome3':'SUB'})
+
+        # Create the sub SMACH state machine
+        sm_sub = smach.StateMachine(outcomes=['outcome4'])
+
+        # Open the container
+        with sm_sub:
+
+            # Add states to the container
+            smach.StateMachine.add('FOO', Foo(), 
+                                   transitions={'outcome1':'BAR', 
+                                                'outcome2':'outcome4'})
+            smach.StateMachine.add('BAR', Bar(), 
+                                   transitions={'outcome1':'FOO'})
+
+        smach.StateMachine.add('SUB', sm_sub,
+                               transitions={'outcome4':'outcome5'})
+
+    # Execute SMACH plan
+    outcome = sm_top.execute()
+
 
 
 if __name__ == '__main__':
