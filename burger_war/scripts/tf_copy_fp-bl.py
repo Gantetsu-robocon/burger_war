@@ -17,7 +17,7 @@ if __name__ == '__main__':
     t1 = TransformStamped()
     t1.header.stamp = rospy.Time.now()
     t1.header.frame_id = 'base_footprint_2'
-    t1.child_frame_id = 'base_link_2'
+    t1.child_frame_id = 'base_link'
     t1.transform.translation.x = 0.0
     t1.transform.translation.y = 0.0
     t1.transform.translation.z = 0.01

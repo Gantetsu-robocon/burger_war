@@ -160,9 +160,9 @@ odom0_twist_rejection_threshold: 1  #?
 
 imu0: imu0 #example/imu
 imu0_config: [false, false, false,
-              true,  true,  true,
+              false,  false,  true,
               false, false, false,
-              true,  true,  true,
+              false,  false,  true,
               false, false,  false]
 imu0_nodelay: false
 imu0_differential: false

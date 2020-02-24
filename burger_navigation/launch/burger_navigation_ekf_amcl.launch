@@ -29,10 +29,10 @@
  
   <node pkg="burger_war" name="copy_tf_fp_bl" type="tf_copy_fp-bl.py" >
   </node>
-  <node pkg="burger_war" name="copy_tf_bl_imu" type="tf_copy_bl-imu.py" >
+  <!-- <node pkg="burger_war" name="copy_tf_bl_imu" type="tf_copy_bl-imu.py" >
   </node>
   <node pkg="burger_war" name="copy_tf_bl_ld" type="tf_copy_bl-ld.py" >
-  </node>
+  </node> -->
   
     <!-- EKF -->
     
@@ -77,9 +77,9 @@
     <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
 
     <param name="local_costmap/global_frame"             value="odom"/>
-    <param name="local_costmap/robot_base_frame"             value="base_link_2"/>
+    <param name="local_costmap/robot_base_frame"             value="base_link"/>
     <param name="local_costmap/scan/sensor_frame"             value="base_scan"/>
-    <param name="global_costmap/robot_base_frame"            value="base_link_2"/>
+    <param name="global_costmap/robot_base_frame"            value="base_link"/>
     <param name="global_costmap/global_frame"            value="map"/>
     <param name="global_costmap/scan/sensor_frame"             value="base_scan"/>
   </node> 
