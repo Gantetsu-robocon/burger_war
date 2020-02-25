@@ -181,17 +181,17 @@ class SendPriorityGoal(object):
     def show_state(self): # for debug
         print("{}".format(json.dumps(self.target_states,indent=4)))
 
-    def send_goal(self,goal_name,goal_point):
-        self.goal.target_pose.pose.position.x = goal_point[0]
-        self.goal.target_pose.pose.position.y = goal_point[1]
+    def send_target_goal(self,target_name):
+        self.goal.target_pose.pose.position.x = self.target_states[target_name]["pose"][0]
+        self.goal.target_pose.pose.position.y = self.target_states[target_name]["pose"][1]
 
-        q = tf.transformations.quaternion_from_euler(0,0,goal_point[2])
+        q = tf.transformations.quaternion_from_euler(0,0,self.target_states[target_name]["pose"][2])
         self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
 
         self.action.send_goal(self.goal)
         succeeded = self.action.wait_for_result(rospy.Duration(30))
         if succeeded:
-            self.target_states[goal_name]["priority"] = -999
+            self.target_states[target_name]["priority"] = -999
 
     def top_priority_target(self):
         top_pri_name = "Tomato_N"
@@ -205,9 +205,8 @@ class SendPriorityGoal(object):
         while not rospy.is_shutdown():
             self.target_priority_update()
             top_priority_name = self.top_priority_target()
-            top_priority_point = self.target_states[top_priority_name]["pose"]
             #print "top_priotity_target:",self.top_priotity_target()
-            self.send_goal(top_priority_name,top_priority_point)
+            self.send_target_goal(top_priority_name)
             self.show_state()
             r.sleep()
 
