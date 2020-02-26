@@ -1,5 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 this is the test
 =======
 testwakayama
 >>>>>>> 47bd9f0e8d725af6bd1bb92e30f8239665de09c8
+=======
+testwakayama vision3
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
