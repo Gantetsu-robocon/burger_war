@@ -14,8 +14,8 @@ transitions = [
     {'trigger': 'near_target_absent', 'source': 'search_near_target', 'dest':'get_highest_target'},
     {'trigger': 'send_target', 'source': 'get_nearest_target', 'dest':'go_to_target'},
     {'trigger': 'send_target', 'source': 'get_highest_target', 'dest':'go_to_target'},
-    {'trigger': 'period', 'source': 'go_to_target', 'dest':'search_enemy_distance'},
-    {'trigger': 'period', 'source': 'escape', 'dest':'search_enemy_distance'}
+    {'trigger': 'cycle', 'source': 'go_to_target', 'dest':'search_enemy_distance'},
+    {'trigger': 'cycle', 'source': 'escape', 'dest':'search_enemy_distance'}
 ]
 
 
@@ -50,7 +50,6 @@ while True:
     elif model.state == 'get_enemy_pose':
         enemy_pose = get_enemy_pose()
         if enemy_pose and my_pose_orientation - enemy_pose_orientation < np.pi/4:
-            model.trigger('can_see_and_face')
         else:
             model.trigger('cannot_see_or_face')
     
