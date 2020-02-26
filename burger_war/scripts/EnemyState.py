@@ -6,7 +6,10 @@ This is ALL SENSOR use node.
 Mainly echo sensor value in tarminal.
 Please Use for your script base.
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
 =======
 >>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
 by Takuya Yamaguchi @dashimaki360
@@ -21,6 +24,7 @@ from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import tf
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 
 class EnemyBot(object):
@@ -33,6 +37,8 @@ class EnemyBot(object):
         #self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
 
 =======
+=======
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
 import numpy as np
 
 class EnemyBot(object):
@@ -55,13 +61,19 @@ class EnemyBot(object):
         # 相対位置座標 publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)
         
+<<<<<<< HEAD
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
+=======
 >>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
         # camera subscribver
         # please uncoment out if you use camera
         if use_camera:
             # for convert image topic to opencv obj
 <<<<<<< HEAD
+<<<<<<< HEAD
             
+=======
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
 =======
 >>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
             self.img = None
@@ -78,8 +90,14 @@ class EnemyBot(object):
             # update PoseStamped
             pose = PoseStamped()
 <<<<<<< HEAD
+<<<<<<< HEAD
             pose.pose.position.x = self.CP[1]
             pose.pose.position.y = self.CP[0]
+=======
+            pose.pose.position.y = self.Relative_Pose_y
+            pose.pose.position.x = self.Relative_Pose_x
+            #print(pose.pose.position.x , pose.pose.position.y)
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
 =======
             pose.pose.position.y = self.Relative_Pose_y
             pose.pose.position.x = self.Relative_Pose_x
@@ -99,6 +117,7 @@ class EnemyBot(object):
             r.sleep()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def GetThresholdedImage(self,imgHSV):
         imgResult = cv.CreateImage(cv.GetSize(imgHSV), cv.IPL_DEPTH_8U, 1)
         cv.InRangeS(imgHSV, cv.Scalar(150, 160, 60), cv.Scalar(200, 256, 256), imgResult)
@@ -108,6 +127,8 @@ class EnemyBot(object):
         OP = [10,0]
         return OP
 =======
+=======
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
     def ColorCenter(self):
 #        self.img = cv2.rectangle(self.img, (0,360), (640,480), (0,0,0), -1)
         hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
@@ -248,6 +269,9 @@ class EnemyBot(object):
 
 
         return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID,enemy_angle)
+<<<<<<< HEAD
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
+=======
 >>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
 
     # camera image call back sample
@@ -259,16 +283,22 @@ class EnemyBot(object):
             rospy.logerr(e)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         # 色重心        
         self.CP = self.ColorCenter(self.img)
         
 =======
+=======
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
         # 敵の赤マーカ探索
         self.cam_Point_x , self.cam_Point_y , self.cam_Point_size , self.Relative_Pose_x , self.Relative_Pose_y = self.ColorCenter()
         # ARマーカ探索（得点ゲットに使うものではなく、経路決定に使用するもの）
         self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR = self.ARPointSearch()
         #print(self.Relative_Pose_x , self.Relative_Pose_y)
         print(self.AngleEnemy_AR * 180 /3.141592)
+<<<<<<< HEAD
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
+=======
 >>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
@@ -278,7 +308,10 @@ if __name__ == '__main__':
     bot = EnemyBot(use_camera=True)
     bot.strategy()
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
 =======
 >>>>>>> 21daded64005a9ada7c62e85eb62faae5402d0a9
