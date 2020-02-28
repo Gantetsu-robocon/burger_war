@@ -17,6 +17,10 @@ from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import tf
 import numpy as np
+from aruco_msgs.msg import MarkerArray
+import requests
+import json
+from time import sleep
 
 class EnemyBot(object):
     def __init__(self, use_camera=False):
@@ -35,6 +39,8 @@ class EnemyBot(object):
         # 相手の向き（ARより）
         self.AngleEnemy_AR = 0.0
 
+        self.real_target_id = 0
+
         # 相対位置座標 publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)
         
@@ -45,6 +51,7 @@ class EnemyBot(object):
             self.img = None
             self.bridge = CvBridge()
             self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
+            self.target_id_sub = rospy.Subscriber('target_id', MarkerArray, self.targetIdCallback)
 
     def strategy(self):
         '''
@@ -70,6 +77,12 @@ class EnemyBot(object):
             self.relative_pose_pub.publish(pose)
 
             r.sleep()
+
+    def targetIdCallback(self, data):
+        markers = data.markers
+        for marker in markers:
+            self.real_target_id = str(marker.id)
+            print(self.real_target_id)
 
     def ColorCenter(self):
 #        self.img = cv2.rectangle(self.img, (0,360), (640,480), (0,0,0), -1)
@@ -112,7 +125,7 @@ class EnemyBot(object):
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 255, 255), 3)        
         rela_pose_y= 0.0043*center_max_y + 0.5616
         rela_pose_x = -((1.3995*rela_pose_y + 0.1041)*(340-center_max_x) +(-19.317*rela_pose_y+7.1838)) / 1000
-
+        self.real_target_id = 0
         return (center_max_x, center_max_y, size_max ,rela_pose_x,rela_pose_y )
 
     def GreenColor(self):
@@ -161,6 +174,10 @@ class EnemyBot(object):
 
 
     def ARPointSearch(self):
+        if self.real_target_id == 0:
+            #print("ARなし")
+            return (0,0,0,0,0)
+
         aruco = cv2.aruco
         dictionary = aruco.getPredefinedDictionary(aruco.DICT_ARUCO_ORIGINAL)
 
@@ -212,6 +229,10 @@ class EnemyBot(object):
 
         return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID,enemy_angle)
 
+#    def IDCallback(self, data):
+#        print(data)
+
+
     # camera image call back sample
     # comvert image topic to opencv object and show
     def imageCallback(self, data):
@@ -222,10 +243,11 @@ class EnemyBot(object):
 
         # 敵の赤マーカ探索
         self.cam_Point_x , self.cam_Point_y , self.cam_Point_size , self.Relative_Pose_x , self.Relative_Pose_y = self.ColorCenter()
+ 
         # ARマーカ探索（得点ゲットに使うものではなく、経路決定に使用するもの）
         self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR = self.ARPointSearch()
         #print(self.Relative_Pose_x , self.Relative_Pose_y)
-        print(self.AngleEnemy_AR * 180 /3.141592)
+        #print(self.AngleEnemy_AR * 180 /3.141592)
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
 
