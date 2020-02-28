@@ -39,6 +39,8 @@ class EnemyBot(object):
         # 相手の向き（ARより）
         self.AngleEnemy_AR = 0.0
 
+        self.GreenSize = 0.0
+
         self.real_target_id = 0
 
         # 相対位置座標 publisher
@@ -60,6 +62,11 @@ class EnemyBot(object):
         r = rospy.Rate(1)
 
         while not rospy.is_shutdown():
+            if self.cam_AR_size>4000 or self.GreenSize>45000: #近すぎるから離れよう
+                BackFlag = 1  # dummy
+            if self.AngleEnemy_AR>0: #相手に背を向けないように
+                RotateFlag = 1 # dummy
+
             # update PoseStamped
             pose = PoseStamped()
             pose.pose.position.y = self.Relative_Pose_y
@@ -82,7 +89,7 @@ class EnemyBot(object):
         markers = data.markers
         for marker in markers:
             self.real_target_id = str(marker.id)
-            print(self.real_target_id)
+            #print(self.real_target_id)
 
     def ColorCenter(self):
 #        self.img = cv2.rectangle(self.img, (0,360), (640,480), (0,0,0), -1)
@@ -176,7 +183,7 @@ class EnemyBot(object):
     def ARPointSearch(self):
         if self.real_target_id == 0:
             #print("ARなし")
-            return (0,0,0,0,0)
+            return (0,0,0,0,0,0)
 
         aruco = cv2.aruco
         dictionary = aruco.getPredefinedDictionary(aruco.DICT_ARUCO_ORIGINAL)
@@ -184,7 +191,7 @@ class EnemyBot(object):
         corners, ids, rejectedImgPoints = aruco.detectMarkers(self.img, dictionary)
         aruco.drawDetectedMarkers(self.img, corners, ids, (0,255,0))
         if not corners:
-            return (0,0,0,0,0)
+            return (0,0,0,0,0,0)
 
         ARsize_max = 0
         ARcenter_max_x = 0
@@ -199,7 +206,7 @@ class EnemyBot(object):
                     ARcenter_max_y = (corners[i][0][0][1] + corners[i][0][1][1] + corners[i][0][2][1] + corners[i][0][3][1])/4
                     ARsize_max = ARsize
                     now_ID = ids[i][0]
-        enemy_angle = 0
+        enemy_angle = 0.0
         # 敵の向きを推定
         if now_ID == 50 or now_ID == 51 or now_ID == 52:
             green_w_center_x , green_center_y ,green_wx , green_wy , green_size = self.GreenColor()
@@ -226,8 +233,12 @@ class EnemyBot(object):
                 else:
                     enemy_angle = 180*3.141592/180 - temp_theta                 
 
+        #print("ARsize_max")
+        #print(ARsize_max)
+        #print("green_size")
+        #print(green_size)
 
-        return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID,enemy_angle)
+        return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID,enemy_angle,green_size)
 
 #    def IDCallback(self, data):
 #        print(data)
@@ -244,10 +255,11 @@ class EnemyBot(object):
         # 敵の赤マーカ探索
         self.cam_Point_x , self.cam_Point_y , self.cam_Point_size , self.Relative_Pose_x , self.Relative_Pose_y = self.ColorCenter()
  
-        # ARマーカ探索（得点ゲットに使うものではなく、経路決定に使用するもの）
-        self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR = self.ARPointSearch()
-        #print(self.Relative_Pose_x , self.Relative_Pose_y)
-        #print(self.AngleEnemy_AR * 180 /3.141592)
+        # ARマーカ位置探索
+        self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR , self.GreenSize= self.ARPointSearch()
+        #print(self.AngleEnemy_AR * 180 / 3.141592)
+
+
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
 
