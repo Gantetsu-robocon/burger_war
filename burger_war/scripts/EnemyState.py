@@ -92,11 +92,22 @@ class EnemyBot(object):
             #print(self.real_target_id)
 
     def ColorCenter(self):
-#        self.img = cv2.rectangle(self.img, (0,360), (640,480), (0,0,0), -1)
         hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
-        color_min = np.array([0,100,150])
-        color_max = np.array([50,255,255])
-        color_mask = cv2.inRange(hsv_img, color_min, color_max)
+        #hsv_img = cv2.rectangle(hsv_img, (0,360), (640,480), (0,0,0), -1)
+        #color_min = np.array([0,100,150])
+        #color_max = np.array([50,255,255])
+        #color_mask = cv2.inRange(hsv_img, color_min, color_max)
+
+        # 赤色のHSVの値域1
+        hsv_min = np.array([0,64,0])
+        hsv_max = np.array([30,255,255])
+        mask1 = cv2.inRange(hsv_img, hsv_min, hsv_max)
+        # 赤色のHSVの値域2
+        hsv_min = np.array([150,64,0])
+        hsv_max = np.array([179,255,255])
+        mask2 = cv2.inRange(hsv_img, hsv_min, hsv_max)
+        color_mask = mask1 + mask2
+
         bin_img = cv2.bitwise_and(self.img, self.img, mask = color_mask)
         bin_img = cv2.cvtColor(bin_img, cv2.COLOR_BGR2GRAY)
         nLabels, label_img, data, center = cv2.connectedComponentsWithStats(bin_img)
@@ -113,7 +124,7 @@ class EnemyBot(object):
         for i in range(1, nLabels):
             x, y, w, h, size = data[i]
             center_x, center_y = center[i]
-            if size > size_max:
+            if size > size_max and center_y<240:
                 size_max_x = x
                 size_max_y = y
                 size_max_w = w
@@ -133,6 +144,7 @@ class EnemyBot(object):
         rela_pose_y= 0.0043*center_max_y + 0.5616
         rela_pose_x = -((1.3995*rela_pose_y + 0.1041)*(340-center_max_x) +(-19.317*rela_pose_y+7.1838)) / 1000
         self.real_target_id = 0
+        
         return (center_max_x, center_max_y, size_max ,rela_pose_x,rela_pose_y )
 
     def GreenColor(self):
@@ -179,6 +191,54 @@ class EnemyBot(object):
         return (center_max_x,center_max_y,size_max_w, size_max_h, size_max)
 
 
+    def BlueColor(self):
+        
+        hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
+        color_min = np.array([90,64,0])
+        color_max = np.array([150,255,255])
+        color_mask = cv2.inRange(hsv_img, color_min, color_max)
+        bin_img = cv2.bitwise_and(self.img, self.img, mask = color_mask)
+        bin_img = cv2.cvtColor(bin_img, cv2.COLOR_BGR2GRAY)
+        nLabels, label_img, data, center = cv2.connectedComponentsWithStats(bin_img)
+        print(nLabels)
+        if nLabels < 2:
+            return (0.0,0.0,0.0,0.0,0.0)
+        size_max = 0
+        size_max_x = 0
+        size_max_y = 0
+        size_max_w = 0
+        size_max_h = 0
+        center_max_x = 0
+        center_max_y = 0
+
+        for i in range(1, nLabels):
+            x, y, w, h, size = data[i]
+            center_x, center_y = center[i]
+            if size > size_max:
+                size_max_x = x
+                size_max_y = y
+                size_max_w = w
+                size_max_h = h
+                size_max = size
+    #            center_max_x = size_max_x + size_max_w/2
+    #            center_max_y = size_max_y + size_max_h/2
+                center_max_x = center_x
+                center_max_y = center_y
+
+        if size_max < 30:
+            center_max_x = 0
+            center_max_y = 0            
+            size_max_w = 0
+            size_max_h = 0
+            size_max = 0
+
+        self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 255, 255), 3)        
+        #print(center_max_x)
+        return (center_max_x,center_max_y,size_max_w, size_max_h, size_max)
+
+
+
+
 
     def ARPointSearch(self):
         if self.real_target_id == 0:
@@ -207,6 +267,7 @@ class EnemyBot(object):
                     ARsize_max = ARsize
                     now_ID = ids[i][0]
         enemy_angle = 0.0
+        green_size = 0.0
         # 敵の向きを推定
         if now_ID == 50 or now_ID == 51 or now_ID == 52:
             green_w_center_x , green_center_y ,green_wx , green_wy , green_size = self.GreenColor()
@@ -233,16 +294,7 @@ class EnemyBot(object):
                 else:
                     enemy_angle = 180*3.141592/180 - temp_theta                 
 
-        #print("ARsize_max")
-        #print(ARsize_max)
-        #print("green_size")
-        #print(green_size)
-
         return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID,enemy_angle,green_size)
-
-#    def IDCallback(self, data):
-#        print(data)
-
 
     # camera image call back sample
     # comvert image topic to opencv object and show
@@ -252,9 +304,11 @@ class EnemyBot(object):
         except CvBridgeError as e:
             rospy.logerr(e)
 
+        #self.BlueColor()
+
         # 敵の赤マーカ探索
         self.cam_Point_x , self.cam_Point_y , self.cam_Point_size , self.Relative_Pose_x , self.Relative_Pose_y = self.ColorCenter()
- 
+        print(self.cam_Point_x , self.cam_Point_y , self.cam_Point_size)
         # ARマーカ位置探索
         self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR , self.GreenSize= self.ARPointSearch()
         #print(self.AngleEnemy_AR * 180 / 3.141592)
