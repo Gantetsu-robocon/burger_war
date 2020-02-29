@@ -33,15 +33,15 @@ class TransformEnemy():
 
     #敵が見えてるときのみ更新
     def enemyCallback(self,data):
-        if (self.flags[0] + self.flags[1] + self.flags[3] != 0 ):
+        if (self.flags[0] + self.flags[1] + self.flags[3]) != 0 :
             self.enemy_ps.pose.position = data.pose.position
             self.enemy_ps.pose.orientation = data.pose.orientation
         #self.enemy_ps_save = self.enemy_ps
 
     def flagCallback(self, data):
-        for i, flag in enumerate(data):
+        for i, flag in enumerate(data.data):
             self.flags[i] = flag
-        if (self.flags[0] + self.flags[1] + self.flags[3] == 0 ):
+        if (self.flags[0] + self.flags[1] + self.flags[3]) == 0 :
             current_time = rospy.Time.now().secs
             self.flags[5] = current_time - self.initial_time
     
@@ -55,8 +55,8 @@ class TransformEnemy():
         self.br.sendTransform(t)
     
     def publish_flags(self):
-        msg = self.flags
-        self.flag_pub(msg)
+        array_forPublish = Int8MultiArray(data=self.flags)
+        self.flag_pub.publish(array_forPublish)
 
     def main(self):
         rate = rospy.Rate(5)
@@ -70,6 +70,6 @@ class TransformEnemy():
 if __name__ == '__main__':
     rospy.init_node('enemy_tf_broadcaster')
     br_enemy = TransformEnemy()
-    br_enemy.tf_enemy_pose()
+    br_enemy.main()
     
 

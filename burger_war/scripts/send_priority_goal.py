@@ -25,7 +25,7 @@ class Matter(object):
         self.transitions = [
             {'trigger': 'enemy_far', 'source': 'search_enemy_distance', 'dest':'get_time_left'},
             {'trigger': 'enemy_near', 'source': 'search_enemy_distance', 'dest':'get_enemy_pose'},
-            {'trigger': 'cannnot_see_or_face', 'source': 'get_enemy_pose', 'dest':'get_time_left'},
+            {'trigger': 'cannot_see_or_face', 'source': 'get_enemy_pose', 'dest':'get_time_left'},
             {'trigger': 'can_see_and_face', 'source': 'get_enemy_pose', 'dest':'escape'},
             {'trigger': 'time_over', 'source': 'get_time_left', 'dest':'get_nearest_target'},
             {'trigger': 'in_time', 'source': 'get_time_left', 'dest':'search_near_target'},
