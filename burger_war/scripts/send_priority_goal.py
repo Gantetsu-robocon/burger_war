@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Int8MultiArray
 import json
 import numpy as np
 from geometry_msgs.msg import PoseStamped, Quaternion, Point, Twist, Pose
@@ -132,6 +132,7 @@ class SendPriorityGoal(object):
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
         self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
         self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
+        self.color_flag_sub = rospy.Subscriber('color_flag_time',Int8MultiArray, self.colorCallback)
         #self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
 
         """
@@ -143,6 +144,7 @@ class SendPriorityGoal(object):
         """
         #Publisher
         self.desired_goal_pub = rospy.Publisher("desired_pose", PoseStamped, queue_size=1)
+        self.cancel_goal_pub = rospy.Publisher("reset_pathplan", String, queue_size=1)
 
         # Generate Goal
         self.goal = MoveBaseGoal()
@@ -232,6 +234,9 @@ class SendPriorityGoal(object):
         self.enemy_pose = pose
         self.target_pose_update()
         self.target_distance_update()
+
+    def colorCallback(self, array):
+        self.color_flag = array
     
     def show_state(self): # for debug
         print("{}".format(json.dumps(self.target_states,indent=4)))
@@ -261,6 +266,7 @@ class SendPriorityGoal(object):
 
         self.desired_goal_pub.publish(goal)
         rospy.sleep(self.control_cycle)
+        self.cancel_goal_pub.publish("Stop")
 
     def top_priority_target(self):
         top_pri_name = "Tomato_N"
@@ -323,11 +329,11 @@ class SendPriorityGoal(object):
                     self.model.trigger('cannot_see_or_face')
 
             elif self.model.state == 'escape':
-                init_t = rospy.time.now
+                init_t = rospy.Time.now().to_sec()
                 now_t = init_t
                 while now_t - init_t > self.control_cycle:
                     #TODO 回避動作の定義
-                    now_t = rospy.time.now
+                    now_t = rospy.Time.now().to_sec()
                     print now_t
                 self.model.trigger('cycle')
 

@@ -33,7 +33,7 @@
 
 
   <!-- move_base -->
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="log">
     <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
     <rosparam file="$(find burger_navigation)/param/costmap_common_params_burger.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find burger_navigation)/param/costmap_common_params_burger.yaml" command="load" ns="local_costmap" />
