@@ -355,7 +355,7 @@ class EnemyBot(object):
         if now_ID == 50 or now_ID == 51 or now_ID == 52:
             green_w_center_x , green_center_y ,green_wx , green_wy , green_size , green_x = self.GreenColor()          
             PM_Flag = green_w_center_x - ARcenter_max_x
-            print(PM_Flag)
+            #print(PM_Flag)
             if PM_Flag<-10:
                 green_wx = (ARcenter_max_x - green_x)*2
             elif PM_Flag>10:
@@ -401,7 +401,7 @@ class EnemyBot(object):
         self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR= self.ARPointSearch()
         self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_w , self.Green_Size_h , self.GreenSize , self.Green_x = self.GreenColor()
         self.BlueCenter_X , self.BlueCenter_Y , self.Blue_Size_w , self.Blue_Size_h , self.BlueSize = self.BlueColor()
-        print(self.AngleEnemy_AR*180/3.141592)
+        #print(self.AngleEnemy_AR*180/3.141592)
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
 
