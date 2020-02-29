@@ -237,6 +237,12 @@ class SendPriorityGoal(object):
 
     def enemyposeCallback(self, pose):
         self.enemy_pose = pose
+        if ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0) and (self.color_flag[5] < self.last_target.time):
+            self.enemy_pose.pose.position.x = self.last_target.position[0]
+            self.enemy_pose.pose.position.y = self.last_target.position[1]
+            q = tf.transformations.quaternion_from_euler(0.0, 0.0, self.last_target.position[2])
+            rotation = Quaternion(*q)
+            self.enemy_pose.pose.orientation = rotation
         self.target_pose_update()
         self.target_distance_update()
 
