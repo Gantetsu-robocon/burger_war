@@ -10,6 +10,7 @@ import tf
 import math 
 from geometry_msgs.msg import PoseStamped 
 from geometry_msgs.msg import Quaternion
+from std_msgs.msg import Int8MultiArray
 
 class PubEnemyPose():
 
@@ -17,32 +18,50 @@ class PubEnemyPose():
         self.enemy_ps = PoseStamped()
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
+        self.enemy_pub = rospy.Publisher('absolute_pos', PoseStamped, queue_size=10)
+        self.flag_sub = rospy.Subscriber('/color_flag', Int8MultiArray,self.flagCallback)
+        self.flag_pub = rospy.Publisher('color_flag_time', Int8MultiArray, queue_size=10)
 
         q = tf.transformations.quaternion_from_euler(0.0, 0.0, math.pi)
         rotation = Quaternion(*q)
         self.enemy_ps.pose.orientation = rotation
+        self.flags = [0, 0, 0, 0, 0, 0]
+        self.initial_time = rospy.Time.now().secs
 
-        self.enemy_pub = rospy.Publisher('absolute_pos', PoseStamped, queue_size=10)
+    def flagCallback(self, data):
+        for i, flag in enumerate(data.data):
+            self.flags[i] = flag
+        if (self.flags[0] + self.flags[1] + self.flags[3]) == 0 :
+            current_time = rospy.Time.now().secs
+            self.flags[5] = current_time - self.initial_time
+
+    def publish_flags(self):
+        array_forPublish = Int8MultiArray(data=self.flags)
+        self.flag_pub.publish(array_forPublish)
 
     def lis_pub_enemy_pose(self):
-        rate = rospy.Rate(5)
         msg = PoseStamped()
-        while not rospy.is_shutdown():
-            try:
-                t = self.tfBuffer.lookup_transform('enemy_pos', 'map', rospy.Time(0), rospy.Duration(1.0))
-            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                rospy.logerr('LookupTransform Eroor !')
-                rate.sleep()
-                continue
+        msg.header.frame_id = "map"
+        try:
+            t = self.tfBuffer.lookup_transform('map', 'enemy_pos', rospy.Time(0), rospy.Duration(1.0))
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            rospy.logerr('LookupTransform Eroor !')
+        if (self.flags[0] + self.flags[1] + self.flags[3]) != 0 :
             self.enemy_ps.pose.position = t.transform.translation
             self.enemy_ps.pose.orientation = t.transform.rotation
-            msg.pose = self.enemy_ps.pose
-            self.enemy_pub.publish(msg)
+        msg.pose = self.enemy_ps.pose
+        self.enemy_pub.publish(msg)
+
+    def main(self):
+        rate = rospy.Rate(5)
+        while not rospy.is_shutdown():
+            self.publish_flags()
+            self.lis_pub_enemy_pose()
 
 if __name__ == '__main__':
     rospy.init_node('pub_enemy_abs')
     pub_enemy = PubEnemyPose()
     try:
-        pub_enemy.lis_pub_enemy_pose()
+        pub_enemy.main()
 
     except rospy.ROSInterruptException: pass
