@@ -6,6 +6,7 @@ import actionlib
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Quaternion
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
+from std_msgs.msg import String
 
 import numpy as np
 import math
@@ -108,7 +109,7 @@ class GlobalPathPlan(object):
         self.node_s = [1, 1, 1, 1, 3, 3, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7]
         self.node_t = [2, 4, 6, 8, 2, 4, 6, 8, 2, 4, 6, 8, 2, 4, 6, 8]
         self.pos = [[0.3, 0.3], [-0.3, 0.3], [-0.3, -0.3], [0.3, -0.3], [0.75, 0.75], [-0.75, 0.75], [-0.75, -0.75], [0.75, -0.75]]
-        self.weight = [1, 1, 1, 1, 100, 3, 100, 3, 5, 5, 5, 5, 7, 7, 7, 7]
+        self.weight = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     def where_am_I(self, pos):
         x_rot = (pos[1] + pos[0]) / math.sqrt(2)
@@ -136,7 +137,7 @@ class GlobalPathPlan(object):
         self.node_s[0:0] = [0, 0, 0, 0]
         self.node_t[0:0] = node_t_s
         self.pos[0:0] = [self.start]
-        self.weight[0:0] = [1, 10, 3, 10]
+        self.weight[0:0] = [1, 1, 1, 1]
 
         if self.area_g is 'A':
             node_t_g = [3, 4, 7, 8]
@@ -149,23 +150,21 @@ class GlobalPathPlan(object):
         self.node_s.extend([9, 9, 9, 9])
         self.node_t.extend(node_t_g)
         self.pos.extend([self.goal])
-        self.weight.extend([1, 10, 3, 10])
+        self.weight.extend([1, 1, 1, 1])
 
     def add_theta(self):
-        theta0 = math.cos(math.pi/16)
-        theta1 = math.pi*2/4
-        theta2 = math.pi*3/4
-        theta3 = math.pi*4/4
-        THETA_MAT = [[0, theta0, theta0, theta0, theta0, theta0, theta0, theta0, theta0, theta0],
-                     [theta0, 0, theta0, theta0, theta0, theta0, theta0, theta0, theta0, theta0],
-                     [theta0, theta0, 0, theta0, theta0, theta0, theta0, theta0, theta0, theta0],
-                     [theta0, theta0, theta0, 0, theta0, theta0, theta0, theta0, theta0, theta0],
-                     [theta0, theta0, theta0, theta0, 0, theta0, theta0, theta0, theta0, theta0],
-                     [theta0, theta0, theta0, theta0, theta0, 0, theta0, theta0, theta0, theta0],
-                     [theta0, theta0, theta0, theta0, theta0, theta0, 0, theta0, theta0, theta0],
-                     [theta0, theta0, theta0, theta0, theta0, theta0, theta0, 0, theta0, theta0],
-                     [theta0, theta0, theta0, theta0, theta0, theta0, theta0, theta0, 0, theta0],
-                     [theta0, theta0, theta0, theta0, theta0, theta0, theta0, theta0, theta0, 0]]
+        theta0 = math.pi/4
+        theta1 = 3*math.pi/4
+        theta2 = 5*math.pi/4
+        theta3 = 7*math.pi/4
+        THETA_DICT = {'AB': theta0,
+                      'BC': theta1,
+                      'CD': theta2,
+                      'DA': theta3,
+                      'BA': theta2,
+                      'CB': theta3,
+                      'DC': theta0,
+                      'AD': theta1}
 
         desired_path = []
         for (i, num) in enumerate(self.path):
@@ -176,17 +175,26 @@ class GlobalPathPlan(object):
             else:
                 x = self.pos[num][0]
                 y = self.pos[num][1]
-                theta = THETA_MAT[num][self.path[i+1]]
+                x_next = (self.pos[self.path[i+1]][0] + x)/2
+                y_next = (self.pos[self.path[i+1]][1] + y)/2
+                x_prev = (self.pos[self.path[i-1]][0] + x)/2
+                y_prev = (self.pos[self.path[i-1]][1] + y)/2
+
+                area_next = self.where_am_I([x_next, y_next])
+                area_prev = self.where_am_I([x_prev, y_prev])
+
+                theta = THETA_DICT[area_prev + area_next]
                 desired_path.append([x, y, theta])
         return desired_path
 
     def searchPath(self):
         if self.area_s == self.area_g:
-            return self.goal
+            return [self.goal]
 
         self.connect_node()
         self.graph = Graph(self.node_s, self.node_t, self.pos, self.weight)
         self.path = self.graph.search(0, 9)
+        print("path number : " + str(self.path))
         desired_path = self.add_theta()
         return desired_path
 
@@ -198,22 +206,28 @@ class main():
         self.ac.wait_for_server()
         self.desired_pose_sub = rospy.Subscriber('desired_pose', PoseStamped, self.desiredPoseCallback)
         self.amcl_sub = rospy.Subscriber('amcl_pose', PoseWithCovarianceStamped, self.amclCallback)
+        self.reset_pathplan_sub = rospy.Subscriber('reset_pathplan', String, self.resetPathplanCallback)
+
+        self.succeeded_pub = rospy.Publisher('pathplan_succeeded', String, queue_size=1)
 
         self.desired_pose = PoseStamped()
         self.current_pose = PoseStamped()
 
     def desiredPoseCallback(self, data):
+        self.ac.cancel_all_goals()
         self.desired_pose = data
 
         start = [self.current_pose.pose.position.x,
                 self.current_pose.pose.position.y]
         goal = [self.desired_pose.pose.position.x,
-                 self.desired_pose.pose.position.y,
-                 self.desired_pose.pose.orientation.w]
+                self.desired_pose.pose.position.y,
+                2*math.acos(self.desired_pose.pose.orientation.w)]
+        if self.desired_pose.pose.orientation.z < 0:
+            goal[2] = - goal[2]
 
         pathplanner = GlobalPathPlan(start, goal)
         path = pathplanner.searchPath()
-        print(path)
+        print("path points : " + str(path))
 
         self.goal = MoveBaseGoal()
         self.goal.target_pose.header.frame_id = 'map'
@@ -234,13 +248,20 @@ class main():
 
             if succeeded:
                 rospy.loginfo("Succeeded: No."+"("+str(state)+")")
+                self.succeeded_pub.publish('succeeded')
             else:
                 rospy.loginfo("Failed: No."+"("+str(state)+")")
+                self.succeeded_pub.publish('failed')
+                self.ac.cancel_all_goals()
+                break
             
 
 
     def amclCallback(self, data):
         self.current_pose = data.pose
+    
+    def resetPathplanCallback(self, data):
+        self.ac.cancel_goal()
 
 
 
