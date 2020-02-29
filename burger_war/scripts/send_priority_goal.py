@@ -37,6 +37,11 @@ class Matter(object):
             {'trigger': 'cycle', 'source': 'escape', 'dest':'search_enemy_distance'}
         ]
 
+class Target(object):
+    def __init__(self):
+        self.name = "n"
+        self.position = [0, 0, 0]
+        
 class SendPriorityGoal(object):
     def __init__(self):
         rospy.init_node('send_priority_goal')
@@ -82,6 +87,10 @@ class SendPriorityGoal(object):
             print "Wrong side paramaeter is set"
             sys.exit()
 
+        #Copy previous target state
+        self.target_states_pre = self.target_states
+        self.last_target = Target()
+
 
         #Initialize robot position
         self.enemy_pose = PoseStamped()
@@ -117,7 +126,7 @@ class SendPriorityGoal(object):
 
         #Subscriber
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
-        self.enemy_pose_sub = rospy.Subscriber('abs_enemy_pose',PoseStamped,self.enemyposeCallback)
+        self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
         #self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
         self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
 
@@ -174,6 +183,7 @@ class SendPriorityGoal(object):
         for info in target_data:
             for target_name in self.target_states:
                 if info.get("name") == target_name:
+                    self.target_states_pre[target_name]["player"] = self.target_states[target_name]["player"]
                     self.target_states[target_name]["player"] = info.get("player")
 
     def pose_target_distance(self, target_name, PoseStamped):
@@ -207,6 +217,7 @@ class SendPriorityGoal(object):
         target_info = server_data["targets"]
         self.target_player_update(target_info)
         self.passed_time = server_data["time"]
+        self.last_enemy_target()
 
     def myposeCallback(self,pose):
         self.my_pose = pose.pose
@@ -266,6 +277,13 @@ class SendPriorityGoal(object):
         diff_y = PoseStamped_2.pose.position.y - PoseStamped_1.pose.position.y
         return np.sqrt(diff_x**2+diff_y**2)
 
+    # 相手が最後にとった的を取る
+    def last_enemy_target(self):
+        for target_name in self.target_states:
+            if self.target_states != self.target_states_pre:
+                if self.target_states.player == self.side:
+                    self.last_target.name = target_name
+                    self.last_target.position = self.target_states[target_name]["pose"]
 
     def main(self):
         while not rospy.is_shutdown():
