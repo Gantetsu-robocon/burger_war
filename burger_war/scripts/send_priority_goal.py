@@ -41,6 +41,7 @@ class Target(object):
     def __init__(self):
         self.name = "n"
         self.position = [0, 0, 0]
+        self.time = 0
         
 class SendPriorityGoal(object):
     def __init__(self):
@@ -217,6 +218,7 @@ class SendPriorityGoal(object):
         self.target_player_update(target_info)
         self.passed_time = server_data["time"]
         self.last_enemy_target()
+        self.last_target.time = server_data["time"]
 
     def myposeCallback(self,pose):
         self.my_pose = pose
