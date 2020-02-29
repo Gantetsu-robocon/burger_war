@@ -46,6 +46,7 @@ class EnemyBot(object):
         self.Green_Size_w = 0
         self.Green_Size_h = 0
         self.GreenSize = 0.0
+        self.Green_x = 0.0
 
         # 青マーカ
         self.BlueCenter_X = 0
@@ -100,50 +101,38 @@ class EnemyBot(object):
 
             # update twist
             twist = Twist()
+            
 
             #BlueマーカへのVF VF of A
-            if self.AR_ID == 0:
-                twist.linear.x = 0.1
-                twist.angular.z = (320-self.BlueCenter_X) * 0.2 / 320
-            elif self.AR_ID > 0:
-                twist.linear.x = 0.0
-                twist.angular.z = 0.0
+#            if self.AR_ID == 0:
+#                twist.linear.x = 0.1
+#                twist.angular.z = (320-self.BlueCenter_X) * 0.2 / 320
+#            elif self.AR_ID > 0:
+#                twist.linear.x = 0.0
+#                twist.angular.z = 0.0
 
             #GreenマーカへのVF VF of B
-            if self.AR_ID == 0:
-                twist.linear.x = 0.1
-                twist.angular.z = (320-self.GreenCenter_X) * 0.2 / 320
-            elif self.AR_ID > 0:
-                twist.linear.x = 0.0
-                twist.angular.z = 0.0
+#            if self.AR_ID == 0:
+#                twist.linear.x = 0.1
+#                twist.angular.z = (320-self.GreenCenter_X) * 0.2 / 320
+#            elif self.AR_ID > 0:
+ #               twist.linear.x = 0.0
+ #               twist.angular.z = 0.0
 
             # 敵が近いときのVF VF of C
-            if self.cam_AR_size>4000 or self.GreenSize>45000: #近すぎるから離れよう
-                twist.linear.x = -0.1
-            else :
-                twist.linear.x = 0.0
-            if self.AR_ID > 0:#相手に背を向けないように動こう
-                twist.angular.z = self.AngleEnemy_AR*0.15/(180*3.141592/180)
-            elif self.AR_ID == 0:
-                twist.angular.z = 0.0
-
+ #           if self.cam_AR_size>4000 or self.GreenSize>45000: #近すぎるから離れよう
+ #               twist.linear.x = -0.1
+ #           else :
+  #              twist.linear.x = 0.0
+  #          if self.AR_ID > 0:#相手に背を向けないように動こう
+  #              twist.angular.z = self.AngleEnemy_AR*0.15/(180*3.141592/180)
+  #          elif self.AR_ID == 0:
+  #              twist.angular.z = 0.0
+            
             # publish twist topic
             self.vel_pub.publish(twist)
             # publish twist topic
             self.relative_pose_pub.publish(pose)
-
-#            if self.cam_Point_size > 0:
-#                self.ColorFlag[0] = 1
-#            else :
-#                self.ColorFlag[0] = 0
-#            if self.BlueSize > 0:
-#                self.ColorFlag[1] = 1
-#            else :
-#                self.ColorFlag[1] = 0
-#            if self.GreenSize > 0:
-#                self.ColorFlag[2] = 1
-#            else :
-#                self.ColorFlag[2] = 0
 
             self.ColorFlag = []
             if self.cam_Point_size > 0:
@@ -158,9 +147,16 @@ class EnemyBot(object):
                 self.ColorFlag.append(1)
             else :
                 self.ColorFlag.append(0)
+            if self.AR_ID == 50 or self.AR_ID == 51 or self.AR_ID == 52:
+                self.ColorFlag.append(1)
+            else :
+                self.ColorFlag.append(0)
+            if self.AR_ID > 0 and self.AR_ID < 50:
+                self.ColorFlag.append(1)
+            else :
+                self.ColorFlag.append(0)
 
-
-            print(self.ColorFlag)
+            
 
             ColorFlag_forPublish = Int8MultiArray(data=self.ColorFlag)
             self.color_flag_pub.publish(ColorFlag_forPublish)
@@ -244,7 +240,7 @@ class EnemyBot(object):
         nLabels, label_img, data, center = cv2.connectedComponentsWithStats(bin_img)
         
         if nLabels < 2:
-            return (0.0,0.0,0.0,0.0,0.0)
+            return (0.0,0.0,0.0,0.0,0.0,0.0)
         size_max = 0
         size_max_x = 0
         size_max_y = 0
@@ -275,10 +271,9 @@ class EnemyBot(object):
             size_max_h = 0
             center_max_x = 0
             center_max_y = 0
-        print(size_max)
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 0, 0), 3)        
 
-        return (center_max_x,center_max_y,size_max_w, size_max_h, size_max)
+        return (center_max_x,center_max_y,size_max_w, size_max_h, size_max,size_max_x)
 
 
     def BlueColor(self):
@@ -358,9 +353,14 @@ class EnemyBot(object):
         cv2.putText(self.img,str(now_ID),(70,100),cv2.FONT_HERSHEY_SIMPLEX, 3.0,(0, 0, 0),5)
         # 敵の向きを推定
         if now_ID == 50 or now_ID == 51 or now_ID == 52:
-            green_w_center_x , green_center_y ,green_wx , green_wy , green_size = self.GreenColor()
-            
+            green_w_center_x , green_center_y ,green_wx , green_wy , green_size , green_x = self.GreenColor()          
             PM_Flag = green_w_center_x - ARcenter_max_x
+            print(PM_Flag)
+            if PM_Flag<-10:
+                green_wx = (ARcenter_max_x - green_x)*2
+            elif PM_Flag>10:
+                green_wx = (green_x + green_wx - ARcenter_max_x)*2
+
             ttemp_theta = 0.0
             ttemp_theta = float(green_wx) / float(green_wy)
             temp_theta = -2.0964*ttemp_theta*ttemp_theta + 1.4861*ttemp_theta + 0.6648
@@ -399,9 +399,9 @@ class EnemyBot(object):
         self.cam_Point_x , self.cam_Point_y , self.cam_Point_size , self.Relative_Pose_x , self.Relative_Pose_y = self.ColorCenter()
         # ARマーカ位置探索
         self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR= self.ARPointSearch()
-        self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_w , self.Green_Size_h , self.GreenSize = self.GreenColor()
+        self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_w , self.Green_Size_h , self.GreenSize , self.Green_x = self.GreenColor()
         self.BlueCenter_X , self.BlueCenter_Y , self.Blue_Size_w , self.Blue_Size_h , self.BlueSize = self.BlueColor()
-
+        print(self.AngleEnemy_AR*180/3.141592)
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
 
