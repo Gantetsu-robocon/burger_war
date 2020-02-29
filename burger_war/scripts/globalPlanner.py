@@ -261,9 +261,7 @@ class main():
         self.current_pose = data.pose
     
     def resetPathplanCallback(self, data):
-        self.ac.cancel_goal()
-
-
+        self.ac.cancel_all_goals()
 
 
 if __name__ == '__main__':
