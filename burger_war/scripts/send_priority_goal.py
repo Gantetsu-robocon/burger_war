@@ -121,11 +121,15 @@ class SendPriorityGoal(object):
         #self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
         self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
 
+        """
         #Action client
         self.action = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         while not self.action.wait_for_server(rospy.Duration(5)):
             rospy.loginfo("Waiting for the move_base action server to come up")
         rospy.loginfo("The server comes up")
+        """
+        #Publisher
+        self.desired_goal_pub = rospy.Publisher("desired_pose", PoseStamped, queue_size=1)
 
         # Generate Goal
         self.goal = MoveBaseGoal()
@@ -150,12 +154,6 @@ class SendPriorityGoal(object):
                 pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
                 pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
-            #self.target_states["RE_L"]["pose"] = [pose_m.x-(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y+(0.07+self.focus_dist)*np.cos(th_m), th_m-np.pi/2]
-            #self.target_states["RE_R"]["pose"] = [pose_m.x+(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y-(0.07+self.focus_dist)*np.cos(th_m), th_m+np.pi/2]
-            #self.target_states["RE_B"]["pose"] = [pose_m.x-(0.1+self.focus_dist)*np.cos(th_m),
-            #    pose_m.y-(0.1+self.focus_dist)*np.sin(th_m), th_m]
         elif self.side == "b":
             self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
                 pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
@@ -163,12 +161,6 @@ class SendPriorityGoal(object):
                 pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
                 pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
-            #self.target_states["BL_L"]["pose"] = [pose_m.x-(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y+(0.07+self.focus_dist)*np.cos(th_m), th_m-np.pi/2]
-            #self.target_states["BL_R"]["pose"] = [pose_m.x+(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y-(0.07+self.focus_dist)*np.cos(th_m), th_m+np.pi/2]
-            #self.target_states["BL_B"]["pose"] = [pose_m.x-(0.1+self.focus_dist)*np.cos(th_m),
-            #    pose_m.y-(0.1+self.focus_dist)*np.sin(th_m), th_m]
 
     def target_player_update(self,target_data):
         for info in target_data:
@@ -237,6 +229,20 @@ class SendPriorityGoal(object):
         succeeded = self.action.wait_for_result(rospy.Duration(self.control_cycle))
         if succeeded:
             self.target_states[target_name]["priority"] = -99
+
+    def send_desired_goal(self,target_name):
+        goal = PoseStamped()
+        goal.pose.position.x = self.target_states[target_name]["pose"][0]
+        goal.pose.position.y = self.target_states[target_name]["pose"][1]
+
+        q = tf.transformations.quaternion_from_euler(0,0,self.target_states[target_name]["pose"][2])
+        goal.pose.orientation.x = q[0]
+        goal.pose.orientation.y = q[1]
+        goal.pose.orientation.z = q[2]
+        goal.pose.orientation.w = q[3]
+
+        self.desired_goal_pub.publish(goal)
+        rospy.sleep(self.control_cycle)
 
     def top_priority_target(self):
         top_pri_name = "Tomato_N"
@@ -317,7 +323,13 @@ class SendPriorityGoal(object):
                 self.model.trigger('send_target')
 
             elif self.model.state == 'go_to_target':
+<<<<<<< Updated upstream
+                #TODO 宮原のコードとの連携
                 self.send_target_goal(target)
+=======
+                #self.send_target_goal(target)
+                self.send_desired_goaltarget)
+>>>>>>> Stashed changes
                 print "target_goal:",target
                 self.model.trigger('cycle')
 
