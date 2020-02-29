@@ -5,7 +5,7 @@ import rospy
 from std_msgs.msg import String
 import json
 import numpy as np
-from geometry_msgs.msg import PoseStamped, Quaternion, Point, Twist
+from geometry_msgs.msg import PoseStamped, Quaternion, Point, Twist, Pose
 from nav_msgs.msg import Odometry
 import tf
 import sys
@@ -57,7 +57,7 @@ class SendPriorityGoal(object):
         self.side = rospy.get_param("~side", "r")
         self.focus_dist = rospy.get_param("~focous_dist",0.20) 
         self.enemy_distance_th = rospy.get_param("~enemy_distance_th",0.50)
-        self.time_th = rospy.get_param("~time_th",10)
+        self.time_th = rospy.get_param("~time_th", 150)
         self.control_cycle = rospy.get_param("~control_cycle", 5.0)
         self.diff_theta_th = rospy.get_param("~diff_theta_th",0.7854) #pi/4
         self.near_dist_th = rospy.get_param("~near_dist_th",0.8)
@@ -126,7 +126,7 @@ class SendPriorityGoal(object):
 
         #Subscriber
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
-        self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
+        #self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
         #self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
         self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
 
@@ -222,12 +222,10 @@ class SendPriorityGoal(object):
         self.target_distance_update()
 
     def enemyposeCallback(self, pose):
-        try:
-            self.enemy_pose = pose.pose
-            self.target_pose_update()
-            self.target_distance_update()
-        except:
-            pass
+        print "pose:",type(pose)
+        self.enemy_pose = pose.pose
+        self.target_pose_update()
+        self.target_distance_update()
     
     def show_state(self): # for debug
         print("{}".format(json.dumps(self.target_states,indent=4)))
@@ -312,8 +310,8 @@ class SendPriorityGoal(object):
                     self.model.trigger('in_time')
 
             elif self.model.state == 'get_enemy_pose':
-                enemy_pose = True #TODO 敵が見えるかどうかのFlag
-                if enemy_pose and self.diff_theta < self.diff_theta_th:
+                enemy_pose_flag = True #TODO 敵が見えるかどうかのFlag
+                if enemy_pose_flag and self.diff_theta < self.diff_theta_th:
                     self.model.trigger('can_see_and_face')
                 else:
                     self.model.trigger('cannot_see_or_face')
