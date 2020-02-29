@@ -2,9 +2,12 @@
 <launch>
 
 <!-- Your robot control node run  red side-->
+  <group ns="bot">
   <include file="$(find burger_war)/launch/your_burger.launch">
     <arg name="side" value="r" />
   </include>
+  </group>
+
 
 <!-- enemy bot run  blue side-->
   <group ns="enemy_bot">
