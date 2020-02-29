@@ -100,23 +100,27 @@ class SendPriorityGoal(object):
             self.enemy_pose.pose.position.y = 0 
             self.enemy_pose.pose.position.z = 0 
             q = tf.transformations.quaternion_from_euler(0,0,np.pi)
-            self.enemy_pose.pose.orientation = q
+            self.enemy_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
+
             self.my_pose.pose.position.x = -1.3
             self.my_pose.pose.position.y = 0
             self.my_pose.pose.position.z = 0 
             q = tf.transformations.quaternion_from_euler(0,0,0)
-            self.my_pose.pose.orientation = q
+            self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
+
         elif self.side == "b":
+
             self.enemy_pose.pose.position.x = -1.3
             self.enemy_pose.pose.position.y = 0 
             self.enemy_pose.pose.position.z = 0 
             q = tf.transformations.quaternion_from_euler(0,0,0)
-            self.enemy_pose.pose.orientation = q
+            self.enemy_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
+
             self.my_pose.pose.position.x = 1.3
             self.my_pose.pose.position.y = 0
             self.my_pose.pose.position.z = 0 
             q = tf.transformations.quaternion_from_euler(0,0,np.pi)
-            self.my_pose.pose.orientation = q
+            self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
         self.target_pose_update()
         self.target_distance_update()
@@ -126,9 +130,9 @@ class SendPriorityGoal(object):
 
         #Subscriber
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
-        #self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
-        #self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
-        self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
+        self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
+        self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
+        #self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
 
         """
         #Action client
@@ -146,12 +150,15 @@ class SendPriorityGoal(object):
         self.goal.target_pose.header.stamp = rospy.Time.now()
 
     def target_pose_update(self):
+        #相手の（x,y,th）を持ってくる
         q_e = self.enemy_pose.pose.orientation
-        e_e = tf.transformations.euler_from_quaternion((q_e[0],q_e[1],q_e[2],q_e[3]))
+        e_e = tf.transformations.euler_from_quaternion((q_e.x,q_e.y,q_e.z,q_e.w))
         th_e = e_e[2]
         pose_e = self.enemy_pose.pose.position
+
+        #自分の（x,y,th）を持ってくる
         q_m = self.my_pose.pose.orientation
-        e_m = tf.transformations.euler_from_quaternion((q_m[0],q_m[1],q_m[2],q_m[3]))
+        e_m = tf.transformations.euler_from_quaternion((q_m.x,q_m.y,q_m.z,q_m.w))
         th_m = e_m[2]
         pose_m = self.my_pose.pose.position
         self.diff_theta = th_e - th_m
@@ -212,7 +219,7 @@ class SendPriorityGoal(object):
         self.last_enemy_target()
 
     def myposeCallback(self,pose):
-        self.my_pose = pose.pose
+        self.my_pose = pose
         self.target_pose_update()
         self.target_distance_update()
 
@@ -222,8 +229,7 @@ class SendPriorityGoal(object):
         self.target_distance_update()
 
     def enemyposeCallback(self, pose):
-        print "pose:",type(pose)
-        self.enemy_pose = pose.pose
+        self.enemy_pose = pose
         self.target_pose_update()
         self.target_distance_update()
     

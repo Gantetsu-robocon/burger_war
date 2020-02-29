@@ -46,4 +46,3 @@ if __name__ == '__main__':
         pub_enemy.lis_pub_enemy_pose()
 
     except rospy.ROSInterruptException: pass
-
