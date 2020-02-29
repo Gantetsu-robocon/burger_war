@@ -62,6 +62,7 @@ class SendPriorityGoal(object):
         self.control_cycle = rospy.get_param("~control_cycle", 5.0)
         self.diff_theta_th = rospy.get_param("~diff_theta_th",0.7854) #pi/4
         self.near_dist_th = rospy.get_param("~near_dist_th",0.8)
+        self.use_global_planner = rospy.get_param("~use_global_planner",False)
         current_dir = rospy.get_param("~current_dir","/home/koki/catkin_ws/src/burger_war/burger_war/scripts")
 
         #Initialize target position
@@ -137,21 +138,22 @@ class SendPriorityGoal(object):
         self.color_flag_sub = rospy.Subscriber('color_flag_time',Int8MultiArray, self.colorCallback)
         #self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
 
-        """
+        
         #Action client
         self.action = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         while not self.action.wait_for_server(rospy.Duration(5)):
             rospy.loginfo("Waiting for the move_base action server to come up")
         rospy.loginfo("The server comes up")
-        """
-        #Publisher
-        self.desired_goal_pub = rospy.Publisher("desired_pose", PoseStamped, queue_size=1)
-        self.cancel_goal_pub = rospy.Publisher("reset_pathplan", String, queue_size=1)
-
-        # Generate Goal
-        self.goal = MoveBaseGoal()
-        self.goal.target_pose.header.frame_id = 'map'
-        self.goal.target_pose.header.stamp = rospy.Time.now()
+        
+        if self.use_global_planner:
+            #Goal publisher
+            self.desired_goal_pub = rospy.Publisher("desired_pose", PoseStamped, queue_size=1)
+            self.cancel_goal_pub = rospy.Publisher("reset_pathplan", String, queue_size=1)
+        else:
+            # Generate Goal
+            self.goal = MoveBaseGoal()
+            self.goal.target_pose.header.frame_id = 'map'
+            self.goal.target_pose.header.stamp = rospy.Time.now()
 
     def target_pose_update(self):
         #相手の（x,y,th）を持ってくる
@@ -357,13 +359,14 @@ class SendPriorityGoal(object):
                 self.model.trigger('send_target')
 
             elif self.model.state == 'go_to_target':
-                #self.send_target_goal(target)
-                self.send_desired_goal(target)
                 print "target_goal:",target
+                if self.use_global_planner:
+                    self.send_desired_goal(target)
+                else:
+                    self.send_target_goal(target)
                 self.model.trigger('cycle')
 
             print "self.model.state:",self.model.state
-            self.show_state()
         return
 
 if __name__ == '__main__':
