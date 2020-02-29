@@ -72,13 +72,15 @@ class EnemyBot(object):
             self.img = None
             self.bridge = CvBridge()
             self.target_id_sub = rospy.Subscriber('target_id', MarkerArray, self.targetIdCallback)
-            self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
+            #self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
+            temp_img = rospy.Subscriber('image_raw', Image, self.imageCallback)
+            self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
         '''
         calc Twist and publish cmd_vel topic
         '''
-        r = rospy.Rate(10)
+        r = rospy.Rate(20)
 
         while not rospy.is_shutdown():
 

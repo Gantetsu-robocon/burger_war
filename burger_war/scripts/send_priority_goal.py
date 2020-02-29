@@ -57,7 +57,7 @@ class SendPriorityGoal(object):
         self.side = rospy.get_param("~side", "r")
         self.focus_dist = rospy.get_param("~focous_dist",0.20) 
         self.enemy_distance_th = rospy.get_param("~enemy_distance_th",0.50)
-        self.time_th = rospy.get_param("~time_th", 150)
+        self.time_th = rospy.get_param("~time_th", 0)
         self.control_cycle = rospy.get_param("~control_cycle", 5.0)
         self.diff_theta_th = rospy.get_param("~diff_theta_th",0.7854) #pi/4
         self.near_dist_th = rospy.get_param("~near_dist_th",0.8)
