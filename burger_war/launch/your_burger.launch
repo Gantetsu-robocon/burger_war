@@ -1,15 +1,23 @@
 <?xml version="1.0"?>
 <launch>
+  <!-- You can change control program  -->
   <arg name="side" default="r"/> <!-- "b" = blue side, "r" = red side  -->
 
-    <!-- You can change control program  -->
 
+    <node pkg="burger_war" type="send_priority_goal.py" name="send_priority_goal" output="screen">
+      <param name="side" value="$(arg side)" />
+      <param name="focous_dist" value="0.18"/>
+      <param name="current_dir" value= "$(find burger_war)/scripts"/>
+    </node>
+    
+    <node pkg="burger_war" type="globalPlanner.py" name="globalPlanner" output="screen">
+    </node> 
 
     <!-- localization & navigation -->
-  <include file="$(find burger_navigation)/launch/burger_navigation.launch"/>
+    <include file="$(find burger_navigation)/launch/burger_navigation.launch"/>
 
     <!-- Estimate enemy -->
-  <include file="$(find burger_war)/launch/get_enemy.launch"/>
+    <include file="$(find burger_war)/launch/get_enemy.launch"/>
 
 
     <!-- End of your space  -->

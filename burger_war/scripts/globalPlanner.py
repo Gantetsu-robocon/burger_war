@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
+import math
+from heapq import heappop, heappush
+
+import actionlib
+import numpy as np
 import rospy
 import tf
-import actionlib
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Quaternion
+from geometry_msgs.msg import (PoseStamped, PoseWithCovarianceStamped,
+                               Quaternion)
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
-import numpy as np
-import math
-from heapq import heappush, heappop
-import json
 
 class Node:
     def __init__(self, num, parent, cost, heuristic):
@@ -108,7 +110,7 @@ class GlobalPathPlan(object):
 
         self.node_s = [1, 1, 1, 1, 3, 3, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7]
         self.node_t = [2, 4, 6, 8, 2, 4, 6, 8, 2, 4, 6, 8, 2, 4, 6, 8]
-        self.pos = [[0.3, 0.3], [-0.3, 0.3], [-0.3, -0.3], [0.3, -0.3], [0.71, 0.71], [-0.71, 0.71], [-0.71, -0.71], [0.71, -0.71]]
+        self.pos = [[0.3, 0.3], [-0.3, 0.3], [-0.3, -0.3], [0.3, -0.3], [0.7, 0.7], [-0.7, 0.7], [-0.7, -0.7], [0.7, -0.7]]
         self.weight = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     def where_am_I(self, pos):
@@ -187,11 +189,25 @@ class GlobalPathPlan(object):
                 desired_path.append([x, y, theta])
         return desired_path
 
+    def calc_weight(self):
+        for i in range(len(self.node_s)):
+            ns = self.node_s[i]
+            nt = self.node_t[i]
+
+            ps = self.pos[ns]
+            pt = self.pos[nt]
+
+            dist = math.sqrt((pt[0]-ps[0])**2 + (pt[1]-ps[1])**2)
+
+            self.weight[i] = dist
+
+
     def searchPath(self):
         if self.area_s == self.area_g:
             return [self.goal]
 
         self.connect_node()
+        self.calc_weight()
         self.graph = Graph(self.node_s, self.node_t, self.pos, self.weight)
         self.path = self.graph.search(0, 9)
         print("path number : " + str(self.path))
@@ -233,7 +249,12 @@ class main():
         self.goal.target_pose.header.frame_id = 'map'
         self.goal.target_pose.header.stamp = rospy.Time.now()
 
-        for pose in path:
+        self.index = 0
+        while True:
+            if self.index >= len(path):
+                break
+            else:
+                pose = path[self.index]
             self.goal.target_pose.pose.position.x =  pose[0]
             self.goal.target_pose.pose.position.y =  pose[1]
             q = tf.transformations.quaternion_from_euler(0, 0, pose[2])
@@ -254,6 +275,8 @@ class main():
                 self.succeeded_pub.publish('failed')
                 self.ac.cancel_all_goals()
                 break
+
+            self.index = self.index + 1
             
 
     def odomCallback(self, data):
@@ -261,6 +284,7 @@ class main():
     
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
+        self.index = 10
 
 
 if __name__ == '__main__':
