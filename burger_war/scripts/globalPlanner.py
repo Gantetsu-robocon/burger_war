@@ -227,7 +227,7 @@ class main():
 
         pathplanner = GlobalPathPlan(start, goal)
         path = pathplanner.searchPath()
-        print("path points : " + str(path))
+        rospy.loginfo("path points : " + str(path))
 
         self.goal = MoveBaseGoal()
         self.goal.target_pose.header.frame_id = 'map'
@@ -255,7 +255,6 @@ class main():
                 self.ac.cancel_all_goals()
                 break
             
-
 
     def amclCallback(self, data):
         self.current_pose = data.pose
