@@ -38,10 +38,24 @@ class EnemyBot(object):
         self.cam_AR_size = 0.0
         # 相手の向き（ARより）
         self.AngleEnemy_AR = 0.0
-        # 緑マーカのサイズ
+        # 緑マーカ
+        self.GreenCenter_X = 0
+        self.GreenCenter_Y = 0
+        self.Green_Size_w = 0
+        self.Green_Size_h = 0
         self.GreenSize = 0.0
 
+        # 青マーカ
+        self.BlueCenter_X = 0
+        self.BlueCenter_Y = 0
+        self.Blue_Size_w = 0
+        self.Blue_Size_h = 0
+        self.BlueSize = 0.0
+
         self.real_target_id = 0
+
+
+
 
         # 相対位置座標 publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)
@@ -52,9 +66,10 @@ class EnemyBot(object):
             # for convert image topic to opencv obj
             self.img = None
             self.bridge = CvBridge()
-            self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
             self.target_id_sub = rospy.Subscriber('target_id', MarkerArray, self.targetIdCallback)
 
+            self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
+            
     def strategy(self):
         '''
         calc Twist and publish cmd_vel topic
@@ -89,7 +104,7 @@ class EnemyBot(object):
         markers = data.markers
         for marker in markers:
             self.real_target_id = str(marker.id)
-            #print(self.real_target_id)
+            print(self.real_target_id)
 
     def ColorCenter(self):
         hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
@@ -148,7 +163,7 @@ class EnemyBot(object):
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 255, 255), 3)        
         rela_pose_y= 0.0047*center_max_y + 0.4775
         rela_pose_x = ((-1.4104*rela_pose_y - 0.1011)*(340-center_max_x) +(21.627*rela_pose_y+7.827)) / 1000
-        self.real_target_id = 0
+        
         
         return (center_max_x, center_max_y, size_max ,rela_pose_x,rela_pose_y )
 
@@ -184,7 +199,7 @@ class EnemyBot(object):
                 center_max_x = center_x
                 center_max_y = center_y
 
-        if size_max < 30:
+        if size_max < 100:
             size_max = 0
             size_max_x = 0
             size_max_y = 0
@@ -207,7 +222,6 @@ class EnemyBot(object):
         bin_img = cv2.bitwise_and(self.img, self.img, mask = color_mask)
         bin_img = cv2.cvtColor(bin_img, cv2.COLOR_BGR2GRAY)
         nLabels, label_img, data, center = cv2.connectedComponentsWithStats(bin_img)
-        print(nLabels)
         if nLabels < 2:
             return (0.0,0.0,0.0,0.0,0.0)
         size_max = 0
@@ -247,16 +261,16 @@ class EnemyBot(object):
 
     def ARPointSearch(self):
         if self.real_target_id == 0:
-            print("ARなし")
-            return (0,0,0,0,0,0)
+            return (0,0,0,0,0)
 
         aruco = cv2.aruco
         dictionary = aruco.getPredefinedDictionary(aruco.DICT_ARUCO_ORIGINAL)
 
         corners, ids, rejectedImgPoints = aruco.detectMarkers(self.img, dictionary)
-        aruco.drawDetectedMarkers(self.img, corners, ids, (0,255,0))
+        #aruco.drawDetectedMarkers(self.img, corners, ids, (0,255,0))
+        
         if not corners:
-            return (0,0,0,0,0,0)
+            return (0,0,0,0,0)
 
         ARsize_max = 0
         ARcenter_max_x = 0
@@ -273,7 +287,7 @@ class EnemyBot(object):
                     now_ID = ids[i][0]
         enemy_angle = 0.0
         green_size = 0.0
-        
+        cv2.putText(self.img,str(now_ID),(70,100),cv2.FONT_HERSHEY_SIMPLEX, 3.0,(0,255,255),5)
         # 敵の向きを推定
         if now_ID == 50 or now_ID == 51 or now_ID == 52:
             green_w_center_x , green_center_y ,green_wx , green_wy , green_size = self.GreenColor()
@@ -299,8 +313,8 @@ class EnemyBot(object):
                     enemy_angle = 180*3.141592/180 + temp_theta 
                 else:
                     enemy_angle = 180*3.141592/180 - temp_theta                 
-
-        return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID,enemy_angle,green_size)
+        self.real_target_id = 0
+        return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID,enemy_angle)
 
     # camera image call back sample
     # comvert image topic to opencv object and show
@@ -312,11 +326,10 @@ class EnemyBot(object):
 
         # 敵の赤マーカ探索
         self.cam_Point_x , self.cam_Point_y , self.cam_Point_size , self.Relative_Pose_x , self.Relative_Pose_y = self.ColorCenter()
-        print(self.cam_Point_size , self.Relative_Pose_x , self.Relative_Pose_y)
         # ARマーカ位置探索
-        self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR, self.GreenSize= self.ARPointSearch()
-
-
+        self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR= self.ARPointSearch()
+        self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_w , self.Green_Size_h , self.GreenSize = self.GreenColor()
+        self.BlueCenter_X , self.BlueCenter_Y , self.Blue_Size_w , self.Blue_Size_h , self.BlueSize = self.BlueColor()
 
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
