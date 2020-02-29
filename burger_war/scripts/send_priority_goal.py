@@ -128,6 +128,7 @@ class SendPriorityGoal(object):
 
         #Initialize other variable
         self.passed_time = 0
+        self.color_flag = [0,0,0,0,0,0]
 
         #Subscriber
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
@@ -324,6 +325,7 @@ class SendPriorityGoal(object):
                     self.model.trigger('in_time')
 
             elif self.model.state == 'get_enemy_pose':
+                print "self.color_flag:",self.color_flag
                 if self.color_flag[2] and self.diff_theta < self.diff_theta_th:
                     self.model.trigger('can_see_and_face')
                 else:
