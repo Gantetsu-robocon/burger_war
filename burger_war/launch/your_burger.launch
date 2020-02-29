@@ -12,6 +12,7 @@
       <param name="control_cycle" value="5.0"/>
       <param name="diff_theta_th" value="0.784"/>
       <param name="near_dist_th" value="0.8"/>
+      <param name="use_global_planner" value="False"/>
       <param name="current_dir" value= "$(find burger_war)/scripts"/>
     </node>
     
