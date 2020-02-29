@@ -220,17 +220,17 @@ class SendPriorityGoal(object):
         self.last_enemy_target()
 
     def myposeCallback(self,pose):
-        self.my_pose = pose.pose
+        self.my_pose = pose#.pose
         self.target_pose_update()
         self.target_distance_update()
 
     def myodomCallback(self,odom):
-        self.mypose = odom.pose.pose
+        self.mypose = odom.pose#.pose
         self.target_pose_update()
         self.target_distance_update()
 
     def enemyposeCallback(self, pose):
-        self.enemy_pose = pose.pose
+        self.enemy_pose = pose#.pose
         self.target_pose_update()
         self.target_distance_update()
     
