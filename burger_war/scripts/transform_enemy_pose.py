@@ -21,6 +21,7 @@ class TransformEnemy():
 
         q = tf.transformations.quaternion_from_euler(0.0, 0.0, math.pi)
         rotation = Quaternion(*q)
+        self.enemy_ps.pose.position.x = 1.3
         self.enemy_ps.pose.orientation = rotation
 
     def tf_enemy_pose(self):
