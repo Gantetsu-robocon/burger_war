@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
+import math
+from heapq import heappop, heappush
+
+import actionlib
+import numpy as np
 import rospy
 import tf
-import actionlib
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Quaternion
+from geometry_msgs.msg import (PoseStamped, PoseWithCovarianceStamped,
+                               Quaternion)
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
-import numpy as np
-import math
-from heapq import heappush, heappop
-import json
 
 class Node:
     def __init__(self, num, parent, cost, heuristic):
@@ -233,7 +235,12 @@ class main():
         self.goal.target_pose.header.frame_id = 'map'
         self.goal.target_pose.header.stamp = rospy.Time.now()
 
-        for pose in path:
+        self.index = 0
+        while True:
+            if self.index > len(path):
+                break
+            else:
+                pose = path[self.index]
             self.goal.target_pose.pose.position.x =  pose[0]
             self.goal.target_pose.pose.position.y =  pose[1]
             q = tf.transformations.quaternion_from_euler(0, 0, pose[2])
@@ -254,6 +261,8 @@ class main():
                 self.succeeded_pub.publish('failed')
                 self.ac.cancel_all_goals()
                 break
+
+            self.index = self.index + 1
             
 
     def odomCallback(self, data):
@@ -261,6 +270,7 @@ class main():
     
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
+        self.index = 10
 
 
 if __name__ == '__main__':
