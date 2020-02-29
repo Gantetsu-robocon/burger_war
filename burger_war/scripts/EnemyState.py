@@ -54,9 +54,6 @@ class EnemyBot(object):
 
         self.real_target_id = 0
 
-
-
-
         # 相対位置座標 publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)
         
