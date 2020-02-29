@@ -150,12 +150,6 @@ class SendPriorityGoal(object):
                 pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
                 pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
-            #self.target_states["RE_L"]["pose"] = [pose_m.x-(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y+(0.07+self.focus_dist)*np.cos(th_m), th_m-np.pi/2]
-            #self.target_states["RE_R"]["pose"] = [pose_m.x+(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y-(0.07+self.focus_dist)*np.cos(th_m), th_m+np.pi/2]
-            #self.target_states["RE_B"]["pose"] = [pose_m.x-(0.1+self.focus_dist)*np.cos(th_m),
-            #    pose_m.y-(0.1+self.focus_dist)*np.sin(th_m), th_m]
         elif self.side == "b":
             self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
                 pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
@@ -163,12 +157,6 @@ class SendPriorityGoal(object):
                 pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
                 pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
-            #self.target_states["BL_L"]["pose"] = [pose_m.x-(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y+(0.07+self.focus_dist)*np.cos(th_m), th_m-np.pi/2]
-            #self.target_states["BL_R"]["pose"] = [pose_m.x+(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y-(0.07+self.focus_dist)*np.cos(th_m), th_m+np.pi/2]
-            #self.target_states["BL_B"]["pose"] = [pose_m.x-(0.1+self.focus_dist)*np.cos(th_m),
-            #    pose_m.y-(0.1+self.focus_dist)*np.sin(th_m), th_m]
 
     def target_player_update(self,target_data):
         for info in target_data:
@@ -317,6 +305,7 @@ class SendPriorityGoal(object):
                 self.model.trigger('send_target')
 
             elif self.model.state == 'go_to_target':
+                #TODO 宮原のコードとの連携
                 self.send_target_goal(target)
                 print "target_goal:",target
                 self.model.trigger('cycle')
