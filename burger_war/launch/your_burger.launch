@@ -8,6 +8,9 @@
     <!-- localization & navigation -->
   <include file="$(find burger_navigation)/launch/burger_navigation.launch"/>
 
+    <!-- Estimate enemy -->
+  <include file="$(find burger_war)/launch/get_enemy.launch"/>
+
 
     <!-- End of your space  -->
 </launch>
