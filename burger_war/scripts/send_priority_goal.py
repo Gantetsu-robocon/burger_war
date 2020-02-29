@@ -239,7 +239,7 @@ class SendPriorityGoal(object):
         self.target_distance_update()
 
     def colorCallback(self, array):
-        self.color_flag = array
+        self.color_flag = array.data
     
     def show_state(self): # for debug
         print("{}".format(json.dumps(self.target_states,indent=4)))
@@ -363,6 +363,7 @@ class SendPriorityGoal(object):
                 self.model.trigger('cycle')
 
             print "self.model.state:",self.model.state
+            self.show_state()
         return
 
 if __name__ == '__main__':
