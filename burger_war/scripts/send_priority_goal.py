@@ -222,9 +222,12 @@ class SendPriorityGoal(object):
         self.target_distance_update()
 
     def enemyposeCallback(self, pose):
-        self.enemy_pose = pose.pose
-        self.target_pose_update()
-        self.target_distance_update()
+        try:
+            self.enemy_pose = pose.pose
+            self.target_pose_update()
+            self.target_distance_update()
+        except:
+            pass
     
     def show_state(self): # for debug
         print("{}".format(json.dumps(self.target_states,indent=4)))
@@ -283,7 +286,7 @@ class SendPriorityGoal(object):
         diff_y = PoseStamped_2.pose.position.y - PoseStamped_1.pose.position.y
         return np.sqrt(diff_x**2+diff_y**2)
 
-    # 相手が最後にとった的を取る
+    # 相手が最後にとった的を保存
     def last_enemy_target(self):
         for target_name in self.target_states:
             if self.target_states != self.target_states_pre:
@@ -341,13 +344,8 @@ class SendPriorityGoal(object):
                 self.model.trigger('send_target')
 
             elif self.model.state == 'go_to_target':
-<<<<<<< Updated upstream
-                #TODO 宮原のコードとの連携
-                self.send_target_goal(target)
-=======
                 #self.send_target_goal(target)
-                self.send_desired_goaltarget)
->>>>>>> Stashed changes
+                self.send_desired_goal(target)
                 print "target_goal:",target
                 self.model.trigger('cycle')
 
