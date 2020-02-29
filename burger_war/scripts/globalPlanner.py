@@ -110,7 +110,7 @@ class GlobalPathPlan(object):
 
         self.node_s = [1, 1, 1, 1, 3, 3, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7]
         self.node_t = [2, 4, 6, 8, 2, 4, 6, 8, 2, 4, 6, 8, 2, 4, 6, 8]
-        self.pos = [[0.3, 0.3], [-0.3, 0.3], [-0.3, -0.3], [0.3, -0.3], [0.71, 0.71], [-0.71, 0.71], [-0.71, -0.71], [0.71, -0.71]]
+        self.pos = [[0.3, 0.3], [-0.3, 0.3], [-0.3, -0.3], [0.3, -0.3], [0.7, 0.7], [-0.7, 0.7], [-0.7, -0.7], [0.7, -0.7]]
         self.weight = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     def where_am_I(self, pos):
@@ -189,11 +189,25 @@ class GlobalPathPlan(object):
                 desired_path.append([x, y, theta])
         return desired_path
 
+    def calc_weight(self):
+        for i in range(len(self.node_s)):
+            ns = self.node_s[i]
+            nt = self.node_t[i]
+
+            ps = self.pos[ns]
+            pt = self.pos[nt]
+
+            dist = math.sqrt((pt[0]-ps[0])**2 + (pt[1]-ps[1])**2)
+
+            self.weight[i] = dist
+
+
     def searchPath(self):
         if self.area_s == self.area_g:
             return [self.goal]
 
         self.connect_node()
+        self.calc_weight()
         self.graph = Graph(self.node_s, self.node_t, self.pos, self.weight)
         self.path = self.graph.search(0, 9)
         print("path number : " + str(self.path))
@@ -237,7 +251,7 @@ class main():
 
         self.index = 0
         while True:
-            if self.index > len(path):
+            if self.index >= len(path):
                 break
             else:
                 pose = path[self.index]
