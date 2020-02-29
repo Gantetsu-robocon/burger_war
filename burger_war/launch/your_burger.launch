@@ -1,14 +1,18 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- You can change control program  -->
   <arg name="side" default="r"/> <!-- "b" = blue side, "r" = red side  -->
 
-    <!-- You can change control program  -->
 
 
     <!-- sample program node -->
-      <include file="$(find burger_war)/launch/send_priority_goal.launch">
-      </include>
+    <node pkg="burger_war" type="send_priority_goal.py" name="send_priority_goal" output="screen">
+     <param name="side" value="$(arg side)" />
+     <param name="focous_dist" value="0.20"/>
+     <param name="current_dir" value= "$(find burger_war)/scripts"/>
+    </node>
 
+    <include file="$(find burger_navigation)/launch/burger_navigation.launch"/>
     <!-- <node pkg="burger_war" type="randomRun.py" name="randomRun" output="screen"/> -->
 
     <!-- <node pkg="burger_war" type="YTest.py" name="Y_test" output="screen"/> -->
@@ -19,7 +23,7 @@
     <!--<node pkg="burger_war" type="test_publisher.py" name="test_publisher.py" output="screen"/> --> 
 
     <!-- END sample program node -->
-
+    <!-- localization & navigation -->
 
     <!-- End of your space  -->
 </launch>

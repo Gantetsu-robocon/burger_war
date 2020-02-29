@@ -5,7 +5,8 @@
   <node pkg="burger_war" type="transform_enemy_pose.py" name="enemy_tf_broadcaster" output="screen"/>
   <node pkg="burger_war" type="pub_enemy_abs.py" name="pub_enemy_abs" output="screen"/>
   <node pkg="burger_war" type="EnemyState.py" name="relative_enemy_camera" output="screen"/>
-  
-  
+
+<!-- Publish my pose topic -->  
+  <node pkg="burger_war" type="pub_my_pose.py" name="pub_my_pose" output="screen"/>
 
 </launch>
