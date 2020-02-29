@@ -31,7 +31,7 @@ class PubEnemyPose():
     def flagCallback(self, data):
         for i, flag in enumerate(data.data):
             self.flags[i] = flag
-        if (self.flags[0] + self.flags[1] + self.flags[3]) == 0 :
+        if (self.flags[0] + self.flags[2] + self.flags[3]) == 0 :
             current_time = rospy.Time.now().secs
             self.flags[5] = current_time - self.initial_time
 
@@ -46,7 +46,7 @@ class PubEnemyPose():
             t = self.tfBuffer.lookup_transform('map', 'enemy_pos', rospy.Time(0), rospy.Duration(1.0))
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logerr('LookupTransform Eroor !')
-        if (self.flags[0] + self.flags[1] + self.flags[3]) != 0 :
+        if (self.flags[0] + self.flags[2] + self.flags[3]) != 0 :
             self.enemy_ps.pose.position = t.transform.translation
             self.enemy_ps.pose.orientation = t.transform.rotation
         msg.pose = self.enemy_ps.pose
