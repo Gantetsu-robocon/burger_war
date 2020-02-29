@@ -108,7 +108,7 @@ class GlobalPathPlan(object):
 
         self.node_s = [1, 1, 1, 1, 3, 3, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7]
         self.node_t = [2, 4, 6, 8, 2, 4, 6, 8, 2, 4, 6, 8, 2, 4, 6, 8]
-        self.pos = [[0.3, 0.3], [-0.3, 0.3], [-0.3, -0.3], [0.3, -0.3], [0.75, 0.75], [-0.75, 0.75], [-0.75, -0.75], [0.75, -0.75]]
+        self.pos = [[0.3, 0.3], [-0.3, 0.3], [-0.3, -0.3], [0.3, -0.3], [0.71, 0.71], [-0.71, 0.71], [-0.71, -0.71], [0.71, -0.71]]
         self.weight = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     def where_am_I(self, pos):
@@ -205,7 +205,7 @@ class main():
         self.ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         self.ac.wait_for_server()
         self.desired_pose_sub = rospy.Subscriber('desired_pose', PoseStamped, self.desiredPoseCallback)
-        self.amcl_sub = rospy.Subscriber('amcl_pose', PoseWithCovarianceStamped, self.amclCallback)
+        self.odom_sub = rospy.Subscriber('odom', Odometry, self.odomCallback)
         self.reset_pathplan_sub = rospy.Subscriber('reset_pathplan', String, self.resetPathplanCallback)
 
         self.succeeded_pub = rospy.Publisher('pathplan_succeeded', String, queue_size=1)
@@ -217,8 +217,8 @@ class main():
         self.ac.cancel_all_goals()
         self.desired_pose = data
 
-        start = [self.current_pose.pose.position.x,
-                self.current_pose.pose.position.y]
+        start = [self.current_pose.pose.position.y,
+                 -self.current_pose.pose.position.x]
         goal = [self.desired_pose.pose.position.x,
                 self.desired_pose.pose.position.y,
                 2*math.acos(self.desired_pose.pose.orientation.w)]
@@ -256,7 +256,7 @@ class main():
                 break
             
 
-    def amclCallback(self, data):
+    def odomCallback(self, data):
         self.current_pose = data.pose
     
     def resetPathplanCallback(self, data):
