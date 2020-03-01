@@ -24,6 +24,7 @@ class RandomBot():
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.vel_sub = rospy.Subscriber('cmd_vel',  Twist, self.update_timeem)
+        self.stack_time = rospy.get_param("~stack", 3)
         self.time_em = rospy.Time.now().to_sec()
         self.time_now = rospy.Time.now().to_sec()
 
@@ -56,7 +57,7 @@ class RandomBot():
         #print(self.time_em)
 
 
-    def strategy(self,stack_time = 3):
+    def strategy(self,stack_time):
         r = rospy.Rate(0.5) # change speed 1fps
 
         target_speed = 0
@@ -70,10 +71,10 @@ class RandomBot():
             self.time_dist = self.time_now - self.time_em 
             print "Time distance = " ,self.time_dist
             if self.time_dist > stack_time:
+                print"randomRun"
                 for i in range(5):
                     twist = self.calcTwist()
                     #print(twist)
-                    print"randomRun"
                     self.vel_pub.publish(twist)
             r.sleep()
 
