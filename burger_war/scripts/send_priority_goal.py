@@ -63,6 +63,8 @@ class SendPriorityGoal(object):
         self.diff_theta_th = rospy.get_param("~diff_theta_th",0.7854) #pi/4
         self.near_dist_th = rospy.get_param("~near_dist_th",0.8)
         self.use_global_planner = rospy.get_param("~use_global_planner",False)
+        self.ignore_enemy = rospy.get_param("~ignore_enemy",False)
+        self.use_odom = rospy.get_param("~use_odom", True)
         current_dir = rospy.get_param("~current_dir","/home/koki/catkin_ws/src/burger_war/burger_war/scripts")
 
         #Initialize target position
@@ -81,18 +83,12 @@ class SendPriorityGoal(object):
         self.target_states["FriedShrimp_W"]["pose"][1] += self.focus_dist
         self.target_states["FriedShrimp_E"]["pose"][1] -= self.focus_dist
 
-        if self.side == "r":
-            del self.target_states["RE_B"],self.target_states["RE_R"],self.target_states["RE_L"]
-        elif self.side == "b":
-            del self.target_states["BL_B"],self.target_states["BL_R"],self.target_states["BL_L"]
-        else:
-            print "Wrong side paramaeter is set"
-            sys.exit()
+        if self.ignore_enemy:
+            del self.target_states["RE_B"],self.target_states["RE_R"],self.target_states["RE_L"] ,self.target_states["BL_B"],self.target_states["BL_R"],self.target_states["BL_L"]
 
         #Copy previous target state
         self.target_states_pre = self.target_states
         self.last_target = Target()
-
 
         #Initialize robot position
         self.enemy_pose = PoseStamped()
@@ -134,9 +130,11 @@ class SendPriorityGoal(object):
         #Subscriber
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
         self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
-        self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
         self.color_flag_sub = rospy.Subscriber('color_flag_time',Int8MultiArray, self.colorCallback)
-        #self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
+        if self.use_odom:
+            self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
+        else:
+            self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
 
         
         #Action client
@@ -168,21 +166,21 @@ class SendPriorityGoal(object):
         th_m = e_m[2]
         pose_m = self.my_pose.pose.position
         self.diff_theta = th_e - th_m
-
-        if self.side == "r":
-            self.target_states["BL_L"]["pose"] = [pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
-                pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
-            self.target_states["BL_R"]["pose"] = [pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
-                pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
-            self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
-                pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
-        elif self.side == "b":
-            self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
-                pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
-            self.target_states["RE_R"]["pose"] = [pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
-                pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
-            self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
-                pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
+        if not self.ignore_enemy:
+            if self.side == "r":
+                self.target_states["BL_L"]["pose"] = [pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
+                    pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
+                self.target_states["BL_R"]["pose"] = [pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
+                    pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
+                self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
+                    pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
+            elif self.side == "b":
+                self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
+                    pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
+                self.target_states["RE_R"]["pose"] = [pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
+                    pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
+                self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
+                    pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
 
     def target_player_update(self,target_data):
         for info in target_data:
@@ -198,12 +196,24 @@ class SendPriorityGoal(object):
 
     def target_distance_update(self):
         for target_name in self.target_states:
-            self.target_states[target_name]["distance"] = self.pose_target_distance(target_name, self.my_pose)
+            #自分自身の的は除外
+            if self.side == 'b' and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R"):
+                self.target_states[target_name]["distance"] = 99
+            elif self.side == 'r' and (target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
+                self.target_states[target_name]["distance"] = 99
+            #他の的は距離を算出
+            else:
+                self.target_states[target_name]["distance"] = self.pose_target_distance(target_name, self.my_pose)
     
     def target_priority_update(self):
         for target_name in self.target_states:
+            #自分自身の的は除外
+            if self.side == 'b' and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R"):
+                self.target_states[target_name]["priority"] = -99
+            elif self.side == 'r' and (target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
+                self.target_states[target_name]["priority"] = -99
             #自分自身がとった的は除外
-            if (self.side == 'b' and self.target_states[target_name]["player"] == 'b') or \
+            elif (self.side == 'b' and self.target_states[target_name]["player"] == 'b') or \
                 (self.side == 'r' and self.target_states[target_name]["player"]=='r'):
                 self.target_states[target_name]["priority"] = -99
             else:
@@ -251,6 +261,10 @@ class SendPriorityGoal(object):
     
     def show_state(self): # for debug
         print("{}".format(json.dumps(self.target_states,indent=4)))
+        
+    def show_distnce(self):
+        for target_name in self.target_states:
+            print target_name, self.target_states[target_name]["distance"]
 
     def send_target_goal(self,target_name):
         self.goal.target_pose.pose.position.x = self.target_states[target_name]["pose"][0]
@@ -318,6 +332,9 @@ class SendPriorityGoal(object):
     def main(self):
         while not rospy.is_shutdown():
             self.target_priority_update()
+            if self.ignore_enemy:
+                self.machine.set_state('go_to_target')
+                target = self.top_priority_target()
 
             if self.model.state == 'search_enemy_distance':
                 enemy_distance = self.pose_pose_distance(self.my_pose,self.enemy_pose)
@@ -373,6 +390,7 @@ class SendPriorityGoal(object):
                 self.model.trigger('cycle')
 
             print "self.model.state:",self.model.state
+            self.show_distnce()
         return
 
 if __name__ == '__main__':
