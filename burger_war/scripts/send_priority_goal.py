@@ -314,8 +314,6 @@ class SendPriorityGoal(object):
         goal.header.frame_id = "map"
         goal.pose.position.x = self.target_states[target_name]["pose"][0]
         goal.pose.position.y = self.target_states[target_name]["pose"][1]
-        print self.target_states[target_name]["pose"][0],self.target_states[target_name]["pose"][1]
-
 
         q = tf.transformations.quaternion_from_euler(0,0,self.target_states[target_name]["pose"][2])
         goal.pose.orientation.x = q[0]
@@ -336,16 +334,17 @@ class SendPriorityGoal(object):
                 now_t = rospy.Time.now().to_sec()
             self.vf_flag_pub.publish(data=0)
         """
+        print "self.color_flag:", self.color_flag
         if self.color_flag[2] and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R" \
             or target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
             #vf Bスタート
             print "vf B starts"
-            self.vf_flag_pub.publish(data=2)
+            self.vf_flag_pub.publish(Int8(data=2))
             while (now_t - init_t) < self.control_cycle:
                 if self.color_flag[3]:
                     break
                 now_t = rospy.Time.now().to_sec()
-            self.vf_flag_pub.publish(data=0)
+            self.vf_flag_pub.publish(Int8(data=0))
         else:
             #ゴールをGlobal Plannerに送る
             self.desired_goal_pub.publish(goal)
@@ -392,6 +391,13 @@ class SendPriorityGoal(object):
     def main(self):
         while not rospy.is_shutdown():
             self.target_priority_update()
+            print "【color_flag】",self.color_flag
+            if self.color_flag[2]==0:
+                self.ignore_enemy = True
+            else:
+                self.ignore_enemy = False
+
+            print self.ignore_enemy
             if self.ignore_enemy:
                 self.machine.set_state('go_to_target')
                 target = self.top_priority_target()
@@ -410,8 +416,7 @@ class SendPriorityGoal(object):
                     self.model.trigger('in_time')
 
             elif self.model.state == 'get_enemy_pose':
-                print "self.color_flag:",self.color_flag
-                if self.color_flag[2] and self.diff_theta < self.diff_theta_th:
+                if self.color_flag[2] and (self.diff_theta < self.diff_theta_th):
                     self.model.trigger('can_see_and_face')
                 else:
                     self.model.trigger('cannot_see_or_face')
@@ -421,9 +426,9 @@ class SendPriorityGoal(object):
                 now_t = init_t
                 while (now_t - init_t) < self.control_cycle:
                     #TODO 回避動作の定義
-                    self.vf_flag_pub.publish(date=3) #vf C start
+                    self.vf_flag_pub.publish(Int8(date=3)) #vf C start
                     now_t = rospy.Time.now().to_sec()
-                self.vf_flag_pub.publish(data = 0) #vf stop
+                self.vf_flag_pub.publish(Int8(data = 0)) #vf stop
                 self.model.trigger('cycle')
 
             elif self.model.state == 'search_near_target':
@@ -451,7 +456,6 @@ class SendPriorityGoal(object):
                 self.model.trigger('cycle')
 
             print "self.model.state:",self.model.state
-            print "self.last_enemy_pose:", self.last_target.position
             #self.show_pose()
         return
 
