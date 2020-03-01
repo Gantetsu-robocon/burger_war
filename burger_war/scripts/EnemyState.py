@@ -10,7 +10,7 @@ by Takuya Yamaguchi @dashimaki360
 
 import rospy
 from std_msgs.msg import Int8
-from std_msgs.msg import Int8MultiArray
+from std_msgs.msg import Int16MultiArray
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
@@ -62,7 +62,7 @@ class EnemyBot(object):
         # publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)   
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
-        self.color_flag_pub = rospy.Publisher('color_flag', Int8MultiArray, queue_size=10)
+        self.color_flag_pub = rospy.Publisher('color_flag', Int16MultiArray, queue_size=10)
         self.VF_change_Flag = 0
 
 
@@ -157,7 +157,7 @@ class EnemyBot(object):
             else :
                 self.ColorFlag.append(0)
 
-            ColorFlag_forPublish = Int8MultiArray(data=self.ColorFlag)
+            ColorFlag_forPublish = Int16MultiArray(data=self.ColorFlag)
             self.color_flag_pub.publish(ColorFlag_forPublish)
 
             r.sleep()

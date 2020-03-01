@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-from std_msgs.msg import String, Int8MultiArray, Int8
+from std_msgs.msg import String, Int16MultiArray, Int8
 import json
 import numpy as np
 from geometry_msgs.msg import PoseStamped, Quaternion, Point, Twist, Pose
@@ -135,7 +135,7 @@ class SendPriorityGoal(object):
         #Subscriber
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
         self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
-        self.color_flag_sub = rospy.Subscriber('color_flag_time',Int8MultiArray, self.colorCallback)
+        self.color_flag_sub = rospy.Subscriber('color_flag_time',Int16MultiArray, self.colorCallback)
         if self.use_odom:
             self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
         else:
@@ -334,11 +334,13 @@ class SendPriorityGoal(object):
                 now_t = rospy.Time.now().to_sec()
             self.vf_flag_pub.publish(data=0)
         """
-        print "self.color_flag:", self.color_flag
-        if self.color_flag[2] and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R" \
-            or target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
+        #if self.color_flag[2] and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R" \
+        #    or target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
+        if self.color_flag[2] and ((self.my_pose.pose.position.x - self.enemy_pose.pose.position.x)**2 + (self.my_pose.pose.position.y - self.enemy_pose.pose.position.y)**2) < (self.focus_dist*5)**2:
             #vf Bスタート
-            print "vf B starts"
+            print ""
+            print "vf B starts!!!!!"
+            print ""
             self.vf_flag_pub.publish(Int8(data=2))
             while (now_t - init_t) < self.control_cycle:
                 if self.color_flag[3]:
@@ -346,6 +348,9 @@ class SendPriorityGoal(object):
                 now_t = rospy.Time.now().to_sec()
             self.vf_flag_pub.publish(Int8(data=0))
         else:
+            print ""
+            print "move base"
+            print ""
             #ゴールをGlobal Plannerに送る
             self.desired_goal_pub.publish(goal)
             while (now_t - init_t) < self.control_cycle:
@@ -397,7 +402,6 @@ class SendPriorityGoal(object):
             else:
                 self.ignore_enemy = False
 
-            print self.ignore_enemy
             if self.ignore_enemy:
                 self.machine.set_state('go_to_target')
                 target = self.top_priority_target()
