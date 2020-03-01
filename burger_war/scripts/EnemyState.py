@@ -26,6 +26,10 @@ from time import sleep
 
 class EnemyBot(object):
     def __init__(self, use_camera=False):
+        #Get parameter
+        self.rate = rospy.get_param("~rate", 5)
+        self.resi_per = rospy.get_param("~resize_rate", 0.8)
+
         # カメラ画像上での赤マーカ位置,サイズ
         self.cam_Point_x = 0.0
         self.cam_Point_y = 0.0
@@ -57,9 +61,8 @@ class EnemyBot(object):
         self.real_target_id = 0
         # publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)   
-        self.vel_pub = rospy.Publisher('VF_cmd_vel', Twist,queue_size=1)
+        self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.color_flag_pub = rospy.Publisher('color_flag', Int8MultiArray, queue_size=10)
-        self.resi_per = 0.8
         self.VF_change_Flag = 0
 
 
@@ -75,7 +78,7 @@ class EnemyBot(object):
             #self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
-        r = rospy.Rate(10)
+        r = rospy.Rate(self.rate)
 
         while not rospy.is_shutdown():
 

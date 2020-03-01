@@ -7,8 +7,8 @@
     <node pkg="burger_war" type="send_priority_goal.py" name="send_priority_goal" output="screen">
       <param name="side" value="$(arg side)" />
       <param name="focous_dist" value="0.18"/>
-      <param name="enemy_distance_th" value="1.00"/>
-      <param name="time_th" value="1500000"/>
+      <param name="enemy_distance_th" value="0.50"/>
+      <param name="time_th" value="150"/>
       <param name="control_cycle" value="5.0"/>
       <param name="diff_theta_th" value="0.784"/>
       <param name="near_dist_th" value="0.8"/>
