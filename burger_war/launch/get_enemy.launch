@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="rate" default="2"/>
+  <arg name="rate" default="2"/> <!-- rate = control rate -->>
 
   <!-- Estimate enemy position -->
     <node pkg="burger_war" type="transform_enemy_pose.py" name="transform_enemy_pose" output="screen">
@@ -9,7 +9,10 @@
     <node pkg="burger_war" type="pub_enemy_abs.py" name="pub_enemy_abs" output="screen">
       <param name="rate" value="$(arg rate)"/>
     </node>
-    <node pkg="burger_war" type="EnemyState.py" name="relative_enemy_camera" output="screen"/>
+    <node pkg="burger_war" type="EnemyState.py" name="relative_enemy_camera" output="screen">
+      <param name="rate" value="5"/>
+      <param name="resize_rate" value="0.8"/> <!-- 0 〜 1 -->
+    </node>
 
   <!-- Publish my pose topic -->  
     <node pkg="burger_war" type="pub_my_pose.py" name="pub_my_pose" output="screen">

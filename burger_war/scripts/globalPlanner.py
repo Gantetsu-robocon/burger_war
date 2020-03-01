@@ -105,13 +105,34 @@ class GlobalPathPlan(object):
         self.start = start
         self.goal = goal
 
+        self.into_field()
+
         self.area_s = self.where_am_I(start)
         self.area_g = self.where_am_I(goal)
 
         self.node_s = [1, 1, 1, 1, 3, 3, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7]
         self.node_t = [2, 4, 6, 8, 2, 4, 6, 8, 2, 4, 6, 8, 2, 4, 6, 8]
-        self.pos = [[0.3, 0.3], [-0.3, 0.3], [-0.3, -0.3], [0.3, -0.3], [0.7, 0.7], [-0.7, 0.7], [-0.7, -0.7], [0.7, -0.7]]
+        self.pos = [[0.3, 0.3], [-0.3, 0.3], [-0.3, -0.3], [0.3, -0.3], [0.72, 0.72], [-0.72, 0.72], [-0.72, -0.72], [0.72, -0.72]]
         self.weight = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+    def into_field(self):
+        XY_LIMIT = 0.10
+
+        x = self.goal[0]
+        y = self.goal[1]
+
+        cos45 = math.cos(math.radians(45))
+        sin45 = math.sin(math.radians(45))
+        x_rotate = x*cos45 + y*sin45
+        y_rotate = -x*sin45 + y*cos45
+        if abs(x_rotate) >= XY_LIMIT:
+            x_rotate = XY_LIMIT * x_rotate / abs(x_rotate)
+        if abs(y_rotate) >= XY_LIMIT:
+            y_rotate = XY_LIMIT * y_rotate / abs(y_rotate)
+        
+        self.goal[0] = x_rotate*cos45 - y_rotate*sin45
+        self.goal[1] = x_rotate*sin45 + y_rotate*cos45
+        
 
     def where_am_I(self, pos):
         x_rot = (pos[1] + pos[0]) / math.sqrt(2)
@@ -265,14 +286,12 @@ class main():
             
             succeeded = self.ac.wait_for_result(rospy.Duration(20))
                 
-            state = self.ac.get_state()
+            # state = self.ac.get_state()
 
-            if succeeded:
-                rospy.loginfo("Succeeded: No."+"("+str(state)+")")
+            if succeeded and self.index == len(path)-1:
                 self.succeeded_pub.publish('succeeded')
-            else:
-                rospy.loginfo("Failed: No."+"("+str(state)+")")
-                self.succeeded_pub.publish('failed')
+            if not succeeded:
+                # self.succeeded_pub.publish('failed')
                 self.ac.cancel_all_goals()
                 break
 
