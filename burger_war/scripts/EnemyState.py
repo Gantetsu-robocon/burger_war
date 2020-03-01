@@ -9,6 +9,7 @@ by Takuya Yamaguchi @dashimaki360
 '''
 
 import rospy
+from std_msgs.msg import Int8
 from std_msgs.msg import Int8MultiArray
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
@@ -56,8 +57,11 @@ class EnemyBot(object):
         self.real_target_id = 0
         # publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)   
-        self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
+        self.vel_pub = rospy.Publisher('VF_cmd_vel', Twist,queue_size=1)
         self.color_flag_pub = rospy.Publisher('color_flag', Int8MultiArray, queue_size=10)
+        self.resi_per = 0.8
+        self.VF_change_Flag = 0
+
 
         # camera subscribver
         # please uncoment out if you use camera
@@ -67,6 +71,7 @@ class EnemyBot(object):
             self.bridge = CvBridge()
             self.target_id_sub = rospy.Subscriber('target_id', MarkerArray, self.targetIdCallback)
             self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
+            self.vf_flag_pub =rospy.Subscriber('/vf_flag', Int8, self.VFFlagCallback)
             #self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
@@ -97,31 +102,27 @@ class EnemyBot(object):
             twist = Twist()
             
 ########################以下、VisualFeedback#####################################
+
             #BlueマーカへのVF VF of A
- #           if self.AR_ID == 0:
- #               twist.linear.x = 0.2
- #               twist.angular.z = (320-self.BlueCenter_X) * 0.4 / 320
- #           elif self.AR_ID > 0:
- #               twist.linear.x = 0.0
- #               twist.angular.z = 0.0
+            if self.VF_change_Flag == 1:
+                twist.linear.x = 0.2
+                twist.angular.z = (320*self.resi_per-self.BlueCenter_X) * 0.4 / (320*self.resi_per)
 
             #GreenマーカへのVF VF of B
-#            if self.AR_ID == 0:
-#                twist.linear.x = 0.1
-#                twist.angular.z = (320-self.GreenCenter_X) * 0.2 / 320
-#            elif self.AR_ID > 0:
-#                twist.linear.x = 0.0
-#                twist.angular.z = 0.0
+            if self.VF_change_Flag == 2:
+                twist.linear.x = 0.1
+                twist.angular.z = (320*self.resi_per-self.GreenCenter_X) * 0.2 / (320*self.resi_per)
 
             # 敵が近いときのVF VF of C
- #           if self.cam_AR_size>4000 or self.GreenSize>45000: #近すぎるから離れよう
- #               twist.linear.x = -0.1
- #           else :
-  #              twist.linear.x = 0.0
-  #          if self.AR_ID > 0:#相手に背を向けないように動こう
-  #              twist.angular.z = self.AngleEnemy_AR*0.15/(180*3.141592/180)
-  #          elif self.AR_ID == 0:
-  #              twist.angular.z = 0.0
+            if self.VF_change_Flag == 3:
+                if self.cam_AR_size>(4000*self.resi_per*self.resi_per) or self.GreenSize>(45000*self.resi_per*self.resi_per): #近すぎるから離れよう
+                    twist.linear.x = -0.1
+                else :
+                    twist.linear.x = 0.0
+                if self.AR_ID > 0:#相手に背を向けないように動こう
+                    twist.angular.z = self.AngleEnemy_AR*0.15/(180*3.141592/180)
+                elif self.AR_ID == 0:
+                    twist.angular.z = 0.0
 ###########################################################################
 
             # cmd_celのpublish
@@ -189,7 +190,7 @@ class EnemyBot(object):
         for i in range(1, nLabels):
             x, y, w, h, size = data[i]
             center_x, center_y = center[i]
-            if size > size_max and center_y<240:
+            if size > size_max and center_y<240*self.resi_per:
                 size_max_x = x
                 size_max_y = y
                 size_max_w = w
@@ -200,7 +201,7 @@ class EnemyBot(object):
                 center_max_x = center_x
                 center_max_y = center_y
 
-        if size_max < 100:        
+        if size_max < 100*self.resi_per*self.resi_per:        
             size_max = 0
             size_max_x = 0
             size_max_y = 0
@@ -210,8 +211,8 @@ class EnemyBot(object):
             center_max_y = 0
 
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 0, 0), 3)        
-        rela_pose_y= 0.0047*center_max_y + 0.4775
-        rela_pose_x = ((-1.4104*rela_pose_y - 0.1011)*(340-center_max_x) +(21.627*rela_pose_y+7.827)) / 1000
+        rela_pose_y= (0.0047*center_max_y/self.resi_per + 0.4775)
+        rela_pose_x = ((-1.4104*rela_pose_y - 0.1011)*(340*self.resi_per-center_max_x)/self.resi_per +(21.627*rela_pose_y+7.827)) / 1000
        
         return (center_max_x, center_max_y, size_max ,rela_pose_x,rela_pose_y )
 
@@ -249,7 +250,7 @@ class EnemyBot(object):
     #            center_max_x = center_x
     #            center_max_y = center_y
 
-        if size_max < 100:
+        if size_max < 100*self.resi_per*self.resi_per:
             size_max = 0
             size_max_x = 0
             size_max_y = 0
@@ -294,7 +295,7 @@ class EnemyBot(object):
                 center_max_x = center_x
                 center_max_y = center_y
 
-        if size_max < 100  or size_max_y < 100:
+        if size_max < 100*self.resi_per*self.resi_per  or size_max_y < 100*self.resi_per:
             size_max = 0
             size_max_x = 0
             size_max_y = 0
@@ -309,6 +310,7 @@ class EnemyBot(object):
     def ARPointSearch(self):
         if self.real_target_id == 0:
             return (0,0,0,0,0)
+            #
         aruco = cv2.aruco
         dictionary = aruco.getPredefinedDictionary(aruco.DICT_ARUCO_ORIGINAL)
         corners, ids, rejectedImgPoints = aruco.detectMarkers(self.img, dictionary)
@@ -336,9 +338,9 @@ class EnemyBot(object):
         if now_ID == 50 or now_ID == 51 or now_ID == 52:
             green_w_center_x , green_center_y ,green_wx , green_wy , green_size , green_x = self.GreenColor()          
             PM_Flag = green_w_center_x - ARcenter_max_x
-            if PM_Flag<-10:
+            if PM_Flag<-10*self.resi_per:
                 green_wx = (ARcenter_max_x - green_x)*2
-            elif PM_Flag>10:
+            elif PM_Flag>10*self.resi_per:
                 green_wx = (green_x + green_wx - ARcenter_max_x)*2
 
             ttemp_theta = 0.0
@@ -367,10 +369,13 @@ class EnemyBot(object):
         self.real_target_id = 0
         return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID,enemy_angle)
 
+    def VFFlagCallback(self, data):
+        self.VF_change_Flag = data
+
     def imageCallback(self, data):
         try:
             self.img = self.bridge.imgmsg_to_cv2(data, "bgr8")
-            self.img = cv2.resize(self.img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
+            self.img = cv2.resize(self.img, dsize=None, fx=self.resi_per, fy=self.resi_per, interpolation=cv2.INTER_NEAREST)
         except CvBridgeError as e:
             rospy.logerr(e)
 
@@ -378,6 +383,8 @@ class EnemyBot(object):
         self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR= self.ARPointSearch()
         self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_w , self.Green_Size_h , self.GreenSize , self.Green_x = self.GreenColor()
         self.BlueCenter_X , self.BlueCenter_Y , self.Blue_Size_w , self.Blue_Size_h , self.BlueSize = self.BlueColor()
+        print('AngleEnemy_AR' , self.AngleEnemy_AR*180/3.141592)
+        print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
 
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
