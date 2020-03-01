@@ -4,13 +4,8 @@ raytrace_range: 3.0
 # footprint: [[-0.105, -0.105], [-0.105, 0.105], [0.041, 0.105], [0.041, -0.105]]
 robot_radius: 0.08 # original 0.1
 
-<<<<<<< HEAD
-inflation_radius: 0.2
-cost_scaling_factor: 3.0
-=======
 inflation_radius: 0.8 # orignal 0.8
 cost_scaling_factor: 3.0 # original 3.0
->>>>>>> miya
 
 map_type: costmap
 observation_sources: scan

@@ -8,13 +8,7 @@ local_costmap:
 
   static_map: false  
   rolling_window: true
-<<<<<<< HEAD
-  width: 1.5
-  height: 1.5
-  resolution: 0.02
-=======
   width: 1 # original 3
   height: 1 # original 3
   resolution: 0.02 # original 0.05
->>>>>>> miya
   
