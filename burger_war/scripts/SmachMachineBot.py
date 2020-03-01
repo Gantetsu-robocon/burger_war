@@ -16,7 +16,7 @@ class search_mode(smach.State):
         rospy.loginfo('Executing state search_mode')
         value = random.randint(1,1000)
         print(value)
-        rospy.sleep(3)
+        rospy.sleep(4)
         if value < 500:
             userdata.search_output = value
             return 'enemy'

@@ -105,7 +105,7 @@ class GlobalPathPlan(object):
         self.start = start
         self.goal = goal
 
-        self.into_field()
+        #self.into_field()
 
         self.area_s = self.where_am_I(start)
         self.area_g = self.where_am_I(goal)
