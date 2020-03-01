@@ -18,6 +18,7 @@ class PubEnemyPose():
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
 
+        self.my_ps.pose.position.x = -1.3
         q = tf.transformations.quaternion_from_euler(0.0, 0.0, 0.0)
         rotation = Quaternion(*q)
         self.my_ps.pose.orientation = rotation
@@ -27,9 +28,10 @@ class PubEnemyPose():
     def lis_pub_my_ps(self):
         rate = rospy.Rate(5)
         msg = PoseStamped()
+        msg.header.frame_id = "map"
         while not rospy.is_shutdown():
             try:
-                t = self.tfBuffer.lookup_transform('base_link', 'map', rospy.Time(0), rospy.Duration(1.0))
+                t = self.tfBuffer.lookup_transform('map', 'base_footprint', rospy.Time(0), rospy.Duration(1.0))
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                 rospy.logerr('LookupTransform Eroor !')
                 rate.sleep()

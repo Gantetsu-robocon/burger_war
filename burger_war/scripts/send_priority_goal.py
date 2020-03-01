@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Int8MultiArray
 import json
 import numpy as np
 from geometry_msgs.msg import PoseStamped, Quaternion, Point, Twist, Pose
@@ -25,7 +25,7 @@ class Matter(object):
         self.transitions = [
             {'trigger': 'enemy_far', 'source': 'search_enemy_distance', 'dest':'get_time_left'},
             {'trigger': 'enemy_near', 'source': 'search_enemy_distance', 'dest':'get_enemy_pose'},
-            {'trigger': 'cannnot_see_or_face', 'source': 'get_enemy_pose', 'dest':'get_time_left'},
+            {'trigger': 'cannot_see_or_face', 'source': 'get_enemy_pose', 'dest':'get_time_left'},
             {'trigger': 'can_see_and_face', 'source': 'get_enemy_pose', 'dest':'escape'},
             {'trigger': 'time_over', 'source': 'get_time_left', 'dest':'get_nearest_target'},
             {'trigger': 'in_time', 'source': 'get_time_left', 'dest':'search_near_target'},
@@ -41,6 +41,7 @@ class Target(object):
     def __init__(self):
         self.name = "n"
         self.position = [0, 0, 0]
+        self.time = 0
         
 class SendPriorityGoal(object):
     def __init__(self):
@@ -61,6 +62,7 @@ class SendPriorityGoal(object):
         self.control_cycle = rospy.get_param("~control_cycle", 5.0)
         self.diff_theta_th = rospy.get_param("~diff_theta_th",0.7854) #pi/4
         self.near_dist_th = rospy.get_param("~near_dist_th",0.8)
+        self.use_global_planner = rospy.get_param("~use_global_planner",False)
         current_dir = rospy.get_param("~current_dir","/home/koki/catkin_ws/src/burger_war/burger_war/scripts")
 
         #Initialize target position
@@ -127,27 +129,31 @@ class SendPriorityGoal(object):
 
         #Initialize other variable
         self.passed_time = 0
+        self.color_flag = [0,0,0,0,0,0]
 
         #Subscriber
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
         self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
         self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
+        self.color_flag_sub = rospy.Subscriber('color_flag_time',Int8MultiArray, self.colorCallback)
         #self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
 
-        """
+        
         #Action client
         self.action = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         while not self.action.wait_for_server(rospy.Duration(5)):
             rospy.loginfo("Waiting for the move_base action server to come up")
         rospy.loginfo("The server comes up")
-        """
-        #Publisher
-        self.desired_goal_pub = rospy.Publisher("desired_pose", PoseStamped, queue_size=1)
-
-        # Generate Goal
-        self.goal = MoveBaseGoal()
-        self.goal.target_pose.header.frame_id = 'map'
-        self.goal.target_pose.header.stamp = rospy.Time.now()
+        
+        if self.use_global_planner:
+            #Goal publisher
+            self.desired_goal_pub = rospy.Publisher("desired_pose", PoseStamped, queue_size=1)
+            self.cancel_goal_pub = rospy.Publisher("reset_pathplan", String, queue_size=1)
+        else:
+            # Generate Goal
+            self.goal = MoveBaseGoal()
+            self.goal.target_pose.header.frame_id = 'map'
+            self.goal.target_pose.header.stamp = rospy.Time.now()
 
     def target_pose_update(self):
         #相手の（x,y,th）を持ってくる
@@ -217,6 +223,7 @@ class SendPriorityGoal(object):
         self.target_player_update(target_info)
         self.passed_time = server_data["time"]
         self.last_enemy_target()
+        self.last_target.time = server_data["time"]
 
     def myposeCallback(self,pose):
         self.my_pose = pose
@@ -230,8 +237,17 @@ class SendPriorityGoal(object):
 
     def enemyposeCallback(self, pose):
         self.enemy_pose = pose
+        if ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0) and (self.color_flag[5] < self.last_target.time):
+            self.enemy_pose.pose.position.x = self.last_target.position[0]
+            self.enemy_pose.pose.position.y = self.last_target.position[1]
+            q = tf.transformations.quaternion_from_euler(0.0, 0.0, self.last_target.position[2])
+            rotation = Quaternion(*q)
+            self.enemy_pose.pose.orientation = rotation
         self.target_pose_update()
         self.target_distance_update()
+
+    def colorCallback(self, array):
+        self.color_flag = array.data
     
     def show_state(self): # for debug
         print("{}".format(json.dumps(self.target_states,indent=4)))
@@ -261,6 +277,7 @@ class SendPriorityGoal(object):
 
         self.desired_goal_pub.publish(goal)
         rospy.sleep(self.control_cycle)
+        self.cancel_goal_pub.publish("Stop")
 
     def top_priority_target(self):
         top_pri_name = "Tomato_N"
@@ -316,18 +333,18 @@ class SendPriorityGoal(object):
                     self.model.trigger('in_time')
 
             elif self.model.state == 'get_enemy_pose':
-                enemy_pose_flag = True #TODO 敵が見えるかどうかのFlag
-                if enemy_pose_flag and self.diff_theta < self.diff_theta_th:
+                print "self.color_flag:",self.color_flag
+                if self.color_flag[2] and self.diff_theta < self.diff_theta_th:
                     self.model.trigger('can_see_and_face')
                 else:
                     self.model.trigger('cannot_see_or_face')
 
             elif self.model.state == 'escape':
-                init_t = rospy.time.now
+                init_t = rospy.Time.now().to_sec()
                 now_t = init_t
                 while now_t - init_t > self.control_cycle:
                     #TODO 回避動作の定義
-                    now_t = rospy.time.now
+                    now_t = rospy.Time.now().to_sec()
                     print now_t
                 self.model.trigger('cycle')
 
@@ -348,9 +365,11 @@ class SendPriorityGoal(object):
                 self.model.trigger('send_target')
 
             elif self.model.state == 'go_to_target':
-                #self.send_target_goal(target)
-                self.send_desired_goal(target)
                 print "target_goal:",target
+                if self.use_global_planner:
+                    self.send_desired_goal(target)
+                else:
+                    self.send_target_goal(target)
                 self.model.trigger('cycle')
 
             print "self.model.state:",self.model.state
