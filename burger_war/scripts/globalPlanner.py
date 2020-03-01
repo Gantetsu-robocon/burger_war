@@ -290,9 +290,8 @@ class main():
 
             if succeeded and self.index == len(path)-1:
                 self.succeeded_pub.publish('succeeded')
-                print('succeeded')
             if not succeeded:
-                self.succeeded_pub.publish('failed')
+                # self.succeeded_pub.publish('failed')
                 self.ac.cancel_all_goals()
                 break
 
