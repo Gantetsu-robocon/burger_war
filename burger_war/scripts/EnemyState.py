@@ -57,7 +57,7 @@ class EnemyBot(object):
         self.real_target_id = 0
         # publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)   
-        self.vel_pub = rospy.Publisher('VF_cmd_vel', Twist,queue_size=1)
+        self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.color_flag_pub = rospy.Publisher('color_flag', Int8MultiArray, queue_size=10)
         self.resi_per = 0.8
         self.VF_change_Flag = 0
@@ -75,7 +75,7 @@ class EnemyBot(object):
             #self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
-        r = rospy.Rate(20)
+        r = rospy.Rate(10)
 
         while not rospy.is_shutdown():
 
@@ -102,16 +102,17 @@ class EnemyBot(object):
             twist = Twist()
             
 ########################以下、VisualFeedback#####################################
-
             #BlueマーカへのVF VF of A
             if self.VF_change_Flag == 1:
                 twist.linear.x = 0.2
                 twist.angular.z = (320*self.resi_per-self.BlueCenter_X) * 0.4 / (320*self.resi_per)
-
+                self.vel_pub.publish(twist)
+            
             #GreenマーカへのVF VF of B
             if self.VF_change_Flag == 2:
                 twist.linear.x = 0.1
                 twist.angular.z = (320*self.resi_per-self.GreenCenter_X) * 0.2 / (320*self.resi_per)
+                self.vel_pub.publish(twist)
 
             # 敵が近いときのVF VF of C
             if self.VF_change_Flag == 3:
@@ -123,10 +124,10 @@ class EnemyBot(object):
                     twist.angular.z = self.AngleEnemy_AR*0.15/(180*3.141592/180)
                 elif self.AR_ID == 0:
                     twist.angular.z = 0.0
+                self.vel_pub.publish(twist)
 ###########################################################################
 
-            # cmd_celのpublish
-            self.vel_pub.publish(twist)
+
             # 相対位置・向きのpublish
             self.relative_pose_pub.publish(pose)
 
@@ -185,7 +186,9 @@ class EnemyBot(object):
         size_max_w = 0
         size_max_h = 0
         center_max_x = 0
-        center_max_y = 0
+        center_max_y = 0      
+        rela_pose_y= 0
+        rela_pose_x = 0
 
         for i in range(1, nLabels):
             x, y, w, h, size = data[i]
@@ -213,6 +216,9 @@ class EnemyBot(object):
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 0, 0), 3)        
         rela_pose_y= (0.0047*center_max_y/self.resi_per + 0.4775)
         rela_pose_x = ((-1.4104*rela_pose_y - 0.1011)*(340*self.resi_per-center_max_x)/self.resi_per +(21.627*rela_pose_y+7.827)) / 1000
+        if size_max < 100*self.resi_per*self.resi_per:        
+            rela_pose_x = 0
+            rela_pose_y = 0
        
         return (center_max_x, center_max_y, size_max ,rela_pose_x,rela_pose_y )
 
@@ -383,8 +389,8 @@ class EnemyBot(object):
         self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR= self.ARPointSearch()
         self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_w , self.Green_Size_h , self.GreenSize , self.Green_x = self.GreenColor()
         self.BlueCenter_X , self.BlueCenter_Y , self.Blue_Size_w , self.Blue_Size_h , self.BlueSize = self.BlueColor()
-        print('AngleEnemy_AR' , self.AngleEnemy_AR*180/3.141592)
-        print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
+        #print('AngleEnemy_AR' , self.AngleEnemy_AR*180/3.141592)
+        #print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
 
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
