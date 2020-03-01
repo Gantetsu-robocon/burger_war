@@ -74,7 +74,7 @@ class EnemyBot(object):
             self.target_id_sub = rospy.Subscriber('target_id', MarkerArray, self.targetIdCallback)
             #self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
             temp_img = rospy.Subscriber('image_raw', Image, self.imageCallback)
-            self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
+            self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.8, fy=0.8, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
         '''

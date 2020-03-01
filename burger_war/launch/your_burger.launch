@@ -18,6 +18,7 @@
     
     <node pkg="burger_war" type="globalPlanner.py" name="globalPlanner" output="screen"/>
 
+    <node pkg="burger_war" type="randomRun.py" name="randomRun" output="screen"/>
     <!-- localization & navigation -->
     <include file="$(find burger_navigation)/launch/burger_navigation.launch"/>
 
