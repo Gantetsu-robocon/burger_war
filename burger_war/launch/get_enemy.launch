@@ -2,7 +2,7 @@
 <launch>
 
 <!-- Estimate enemy position -->
-  <node pkg="burger_war" type="transform_enemy_pose.py" name="enemy_tf_broadcaster" output="screen"/>
+  <node pkg="burger_war" type="transform_enemy_pose.py" name="transform_enemy_pose" output="screen"/>
   <node pkg="burger_war" type="pub_enemy_abs.py" name="pub_enemy_abs" output="screen"/>
   <node pkg="burger_war" type="EnemyState.py" name="relative_enemy_camera" output="screen"/>
 

@@ -4,25 +4,14 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Status1
-        - /RobotModel1
-        - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /LaserScan1
-        - /Map1
-        - /Planner Plan1
-        - /Global Map1
         - /Global Map1/Costmap1
         - /Global Map1/Planner1
-        - /Local Map1
         - /Local Map1/Polygon1
         - /Local Map1/Planner1
-        - /Amcl Particles1
-        - /Goal1
       Splitter Ratio: 0.5
-    Tree Height: 221
+    Tree Height: 843
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -130,6 +119,8 @@ Visualization Manager:
           Value: true
         enemy_bot/odom:
           Value: true
+        enemy_pos:
+          Value: true
         imu_link:
           Value: true
         map:
@@ -153,6 +144,8 @@ Visualization Manager:
                 base_scan:
                   {}
                 caster_back_link:
+                  {}
+                enemy_pos:
                   {}
                 imu_link:
                   {}
@@ -192,18 +185,6 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Class: rviz/Image
-      Enabled: false
-      Image Topic: /raspicam_node/image
-      Max Value: 1
-      Median window: 5
-      Min Value: 0
-      Name: Image
-      Normalize Range: true
-      Queue Size: 2
-      Transport Hint: compressed
-      Unreliable: false
-      Value: false
     - Alpha: 0.699999988
       Class: rviz/Map
       Color Scheme: map
@@ -350,130 +331,34 @@ Visualization Manager:
       Topic: /move_base/current_goal
       Unreliable: false
       Value: true
-    - Class: rviz/Camera
-      Enabled: false
-      Image Rendering: background and overlay
-      Image Topic: /image_raw
-      Name: Camera
-      Overlay Alpha: 0.5
-      Queue Size: 2
-      Transport Hint: raw
-      Unreliable: false
-      Value: false
-      Visibility:
-        "": true
-        Amcl Particles: true
-        Camera: true
-        Global Map:
-          Costmap: true
-          Planner: true
-          Value: true
-        Goal: true
-        Grid: true
-        Image: true
-        LaserScan: true
-        Local Map:
-          Costmap: true
-          Planner: true
-          Polygon: true
-          Value: true
-        Map: true
-        Planner Plan: true
-        RobotModel: true
-        TF: true
-        Value: true
-      Zoom Factor: 1
-    - Class: rviz/Camera
-      Enabled: false
-      Image Rendering: background and overlay
-      Image Topic: /enemy_bot/image_raw
-      Name: Camera
-      Overlay Alpha: 0.5
-      Queue Size: 2
-      Transport Hint: raw
-      Unreliable: false
-      Value: false
-      Visibility:
-        "": true
-        Amcl Particles: true
-        Camera: true
-        Global Map:
-          Costmap: true
-          Planner: true
-          Value: true
-        Goal: true
-        Grid: true
-        Image: true
-        LaserScan: true
-        Local Map:
-          Costmap: true
-          Planner: true
-          Polygon: true
-          Value: true
-        Map: true
-        Planner Plan: true
-        RobotModel: true
-        TF: true
-        Value: true
-      Zoom Factor: 1
-    - Class: rviz/Image
-      Enabled: false
-      Image Topic: /enemy_bot/image_raw
-      Max Value: 1
-      Median window: 5
-      Min Value: 0
-      Name: Image
-      Normalize Range: true
-      Queue Size: 2
-      Transport Hint: raw
-      Unreliable: false
-      Value: false
-    - Class: rviz/Image
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.100000001
+      Class: rviz/Pose
+      Color: 0; 0; 255
       Enabled: true
-      Image Topic: /enemy_bot/image_raw
-      Max Value: 1
-      Median window: 5
-      Min Value: 0
-      Name: Image
-      Normalize Range: true
-      Queue Size: 2
-      Transport Hint: raw
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
+      Name: Enemy_pose
+      Shaft Length: 1
+      Shaft Radius: 0.0500000007
+      Shape: Arrow
+      Topic: /absolute_pos
       Unreliable: false
       Value: true
-    - Class: rviz/Image
-      Enabled: false
-      Image Topic: /aruco_marker_publisher/result
-      Max Value: 1
-      Median window: 5
-      Min Value: 0
-      Name: Image
-      Normalize Range: true
-      Queue Size: 2
-      Transport Hint: raw
-      Unreliable: false
-      Value: false
-    - Class: rviz/Image
-      Enabled: false
-      Image Topic: /aruco_marker_publisher/debug
-      Max Value: 1
-      Median window: 5
-      Min Value: 0
-      Name: Image
-      Normalize Range: true
-      Queue Size: 2
-      Transport Hint: raw
-      Unreliable: false
-      Value: false
-    - Class: rviz/Image
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.100000001
+      Class: rviz/Pose
+      Color: 255; 25; 0
       Enabled: true
-      Image Topic: /aruco_marker_publisher/result
-      Max Value: 1
-      Median window: 5
-      Min Value: 0
-      Name: Image
-      Normalize Range: true
-      Queue Size: 2
-      Transport Hint: raw
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
+      Name: My_pose
+      Shaft Length: 1
+      Shaft Radius: 0.0500000007
+      Shape: Arrow
+      Topic: /my_pose
       Unreliable: false
       Value: true
   Enabled: true
@@ -506,7 +391,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 180.522827
+      Scale: 202.185562
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
       X: 0
@@ -517,12 +402,10 @@ Window Geometry:
     collapsed: false
   Displays:
     collapsed: false
-  Height: 1028
+  Height: 1056
   Hide Left Dock: false
   Hide Right Dock: true
-  Image:
-    collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000016a000003befc020000000dfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afc000000280000016c000000d700fffffffa000000010100000002fb0000000a0049006d0061006700650000000000ffffffff0000005c00fffffffb000000100044006900730070006c00610079007301000000000000016a0000016a00fffffffb0000000a0049006d0061006700650000000319000000cc0000001600fffffffb0000000a0049006d0061006700650000000330000000ce0000000000000000fb0000000c00430061006d0065007200610200000209000001970000018200000193fb0000000c00430061006d00650072006100000003a70000005b0000001600fffffffb0000000a0049006d006100670065010000019a000001260000001600fffffffb0000000a0049006d00610067006502000001a6000002310000032200000278fb0000000a0049006d006100670065000000031a000000cc0000001600fffffffb0000000a0049006d00610067006501000002c6000001200000001600ffffff000000010000010f000003a0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000043000003a0000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004a00000003efc0100000002fb0000000800540069006d00650000000000000004a00000030000fffffffb0000000800540069006d0065010000000000000450000000000000000000000230000003be00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000016a000003dafc020000000dfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afc00000028000003da000000d700fffffffa000000010100000002fb0000000a0049006d0061006700650000000000ffffffff0000000000000000fb000000100044006900730070006c00610079007301000000000000016a0000016a00fffffffb0000000a0049006d0061006700650000000319000000cc0000000000000000fb0000000a0049006d00610067006500000001c8000000ce0000000000000000fb0000000c00430061006d0065007200610200000209000001970000018200000193fb0000000c00430061006d00650072006100000003a70000005b0000001600000016fb0000000a0049006d006100670065000000024d000001b50000000000000000fb0000000a0049006d00610067006502000001a6000001c00000032200000278fb0000000a0049006d006100670065000000031a000000cc0000000000000000fb0000000a0049006d00610067006501000002c6000001200000000000000000000000010000010f000003a0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000043000003a0000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004a00000003efc0100000002fb0000000800540069006d00650000000000000004a00000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000005cf000003da00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -531,6 +414,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 928
+  Width: 1855
   X: 65
   Y: 24

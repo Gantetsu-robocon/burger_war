@@ -67,9 +67,11 @@ class EnemyBot(object):
             self.bridge = CvBridge()
             self.target_id_sub = rospy.Subscriber('target_id', MarkerArray, self.targetIdCallback)
             self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
+            #self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
-        r = rospy.Rate(10)
+        r = rospy.Rate(20)
+
         while not rospy.is_shutdown():
 
             # 自分から見た敵の相対位置・向き
@@ -77,8 +79,11 @@ class EnemyBot(object):
             pose = PoseStamped()
             temp_pose.pose.position.y = self.Relative_Pose_y
             temp_pose.pose.position.x = self.Relative_Pose_x
-            euler_z = self.AngleEnemy_AR + 180*3.141592/180
+
+            #euler_z = self.AngleEnemy_AR + 180*3.141592/180
             #　Gazebo座標からRviz座標
+            euler_z = self.AngleEnemy_AR + np.pi
+            #Gazebo座標からRviz座標
             pose.pose.position.x = temp_pose.pose.position.y
             pose.pose.position.y = -temp_pose.pose.position.x
             # オイラー角からクォータニオンへの変換
@@ -365,6 +370,7 @@ class EnemyBot(object):
     def imageCallback(self, data):
         try:
             self.img = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            self.img = cv2.resize(self.img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
         except CvBridgeError as e:
             rospy.logerr(e)
 

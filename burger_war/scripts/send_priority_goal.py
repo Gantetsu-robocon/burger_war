@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Int8MultiArray
 import json
 import numpy as np
-from geometry_msgs.msg import PoseStamped, Quaternion, Point, Twist
+from geometry_msgs.msg import PoseStamped, Quaternion, Point, Twist, Pose
 from nav_msgs.msg import Odometry
 import tf
 import sys
@@ -25,7 +25,7 @@ class Matter(object):
         self.transitions = [
             {'trigger': 'enemy_far', 'source': 'search_enemy_distance', 'dest':'get_time_left'},
             {'trigger': 'enemy_near', 'source': 'search_enemy_distance', 'dest':'get_enemy_pose'},
-            {'trigger': 'cannnot_see_or_face', 'source': 'get_enemy_pose', 'dest':'get_time_left'},
+            {'trigger': 'cannot_see_or_face', 'source': 'get_enemy_pose', 'dest':'get_time_left'},
             {'trigger': 'can_see_and_face', 'source': 'get_enemy_pose', 'dest':'escape'},
             {'trigger': 'time_over', 'source': 'get_time_left', 'dest':'get_nearest_target'},
             {'trigger': 'in_time', 'source': 'get_time_left', 'dest':'search_near_target'},
@@ -37,6 +37,12 @@ class Matter(object):
             {'trigger': 'cycle', 'source': 'escape', 'dest':'search_enemy_distance'}
         ]
 
+class Target(object):
+    def __init__(self):
+        self.name = "n"
+        self.position = [0, 0, 0]
+        self.time = 0
+        
 class SendPriorityGoal(object):
     def __init__(self):
         rospy.init_node('send_priority_goal')
@@ -52,10 +58,11 @@ class SendPriorityGoal(object):
         self.side = rospy.get_param("~side", "r")
         self.focus_dist = rospy.get_param("~focous_dist",0.20) 
         self.enemy_distance_th = rospy.get_param("~enemy_distance_th",0.50)
-        self.time_th = rospy.get_param("~time_th",150)
+        self.time_th = rospy.get_param("~time_th", 0)
         self.control_cycle = rospy.get_param("~control_cycle", 5.0)
         self.diff_theta_th = rospy.get_param("~diff_theta_th",0.7854) #pi/4
         self.near_dist_th = rospy.get_param("~near_dist_th",0.8)
+        self.use_global_planner = rospy.get_param("~use_global_planner",False)
         current_dir = rospy.get_param("~current_dir","/home/koki/catkin_ws/src/burger_war/burger_war/scripts")
 
         #Initialize target position
@@ -82,6 +89,10 @@ class SendPriorityGoal(object):
             print "Wrong side paramaeter is set"
             sys.exit()
 
+        #Copy previous target state
+        self.target_states_pre = self.target_states
+        self.last_target = Target()
+
 
         #Initialize robot position
         self.enemy_pose = PoseStamped()
@@ -91,54 +102,69 @@ class SendPriorityGoal(object):
             self.enemy_pose.pose.position.y = 0 
             self.enemy_pose.pose.position.z = 0 
             q = tf.transformations.quaternion_from_euler(0,0,np.pi)
-            self.enemy_pose.pose.orientation = q
+            self.enemy_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
+
             self.my_pose.pose.position.x = -1.3
             self.my_pose.pose.position.y = 0
             self.my_pose.pose.position.z = 0 
             q = tf.transformations.quaternion_from_euler(0,0,0)
-            self.my_pose.pose.orientation = q
+            self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
+
         elif self.side == "b":
+
             self.enemy_pose.pose.position.x = -1.3
             self.enemy_pose.pose.position.y = 0 
             self.enemy_pose.pose.position.z = 0 
             q = tf.transformations.quaternion_from_euler(0,0,0)
-            self.enemy_pose.pose.orientation = q
+            self.enemy_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
+
             self.my_pose.pose.position.x = 1.3
             self.my_pose.pose.position.y = 0
             self.my_pose.pose.position.z = 0 
             q = tf.transformations.quaternion_from_euler(0,0,np.pi)
-            self.my_pose.pose.orientation = q
+            self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
         self.target_pose_update()
         self.target_distance_update()
 
         #Initialize other variable
         self.passed_time = 0
+        self.color_flag = [0,0,0,0,0,0]
 
         #Subscriber
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
-        self.enemy_pose_sub = rospy.Subscriber('abs_enemy_pose',PoseStamped,self.enemyposeCallback)
-        #self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
-        self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
+        self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
+        self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
+        self.color_flag_sub = rospy.Subscriber('color_flag_time',Int8MultiArray, self.colorCallback)
+        #self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
 
+        
         #Action client
         self.action = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         while not self.action.wait_for_server(rospy.Duration(5)):
             rospy.loginfo("Waiting for the move_base action server to come up")
         rospy.loginfo("The server comes up")
-
-        # Generate Goal
-        self.goal = MoveBaseGoal()
-        self.goal.target_pose.header.frame_id = 'map'
-        self.goal.target_pose.header.stamp = rospy.Time.now()
+        
+        if self.use_global_planner:
+            #Goal publisher
+            self.desired_goal_pub = rospy.Publisher("desired_pose", PoseStamped, queue_size=1)
+            self.cancel_goal_pub = rospy.Publisher("reset_pathplan", String, queue_size=1)
+        else:
+            # Generate Goal
+            self.goal = MoveBaseGoal()
+            self.goal.target_pose.header.frame_id = 'map'
+            self.goal.target_pose.header.stamp = rospy.Time.now()
 
     def target_pose_update(self):
+        #相手の（x,y,th）を持ってくる
         q_e = self.enemy_pose.pose.orientation
-        e_e = tf.transformations.euler_from_quaternion((q_e[0],q_e[1],q_e[2],q_e[3]))
+        e_e = tf.transformations.euler_from_quaternion((q_e.x,q_e.y,q_e.z,q_e.w))
         th_e = e_e[2]
         pose_e = self.enemy_pose.pose.position
+
+        #自分の（x,y,th）を持ってくる
         q_m = self.my_pose.pose.orientation
-        e_m = tf.transformations.euler_from_quaternion((q_m[0],q_m[1],q_m[2],q_m[3]))
+        e_m = tf.transformations.euler_from_quaternion((q_m.x,q_m.y,q_m.z,q_m.w))
         th_m = e_m[2]
         pose_m = self.my_pose.pose.position
         self.diff_theta = th_e - th_m
@@ -150,12 +176,6 @@ class SendPriorityGoal(object):
                 pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
                 pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
-            #self.target_states["RE_L"]["pose"] = [pose_m.x-(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y+(0.07+self.focus_dist)*np.cos(th_m), th_m-np.pi/2]
-            #self.target_states["RE_R"]["pose"] = [pose_m.x+(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y-(0.07+self.focus_dist)*np.cos(th_m), th_m+np.pi/2]
-            #self.target_states["RE_B"]["pose"] = [pose_m.x-(0.1+self.focus_dist)*np.cos(th_m),
-            #    pose_m.y-(0.1+self.focus_dist)*np.sin(th_m), th_m]
         elif self.side == "b":
             self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
                 pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
@@ -163,17 +183,12 @@ class SendPriorityGoal(object):
                 pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
                 pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
-            #self.target_states["BL_L"]["pose"] = [pose_m.x-(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y+(0.07+self.focus_dist)*np.cos(th_m), th_m-np.pi/2]
-            #self.target_states["BL_R"]["pose"] = [pose_m.x+(0.07+self.focus_dist)*np.sin(th_m),
-            #    pose_m.y-(0.07+self.focus_dist)*np.cos(th_m), th_m+np.pi/2]
-            #self.target_states["BL_B"]["pose"] = [pose_m.x-(0.1+self.focus_dist)*np.cos(th_m),
-            #    pose_m.y-(0.1+self.focus_dist)*np.sin(th_m), th_m]
 
     def target_player_update(self,target_data):
         for info in target_data:
             for target_name in self.target_states:
                 if info.get("name") == target_name:
+                    self.target_states_pre[target_name]["player"] = self.target_states[target_name]["player"]
                     self.target_states[target_name]["player"] = info.get("player")
 
     def pose_target_distance(self, target_name, PoseStamped):
@@ -207,21 +222,32 @@ class SendPriorityGoal(object):
         target_info = server_data["targets"]
         self.target_player_update(target_info)
         self.passed_time = server_data["time"]
+        self.last_enemy_target()
+        self.last_target.time = server_data["time"]
 
     def myposeCallback(self,pose):
-        self.my_pose = pose.pose
+        self.my_pose = pose
         self.target_pose_update()
         self.target_distance_update()
 
     def myodomCallback(self,odom):
-        self.mypose = odom.pose.pose
+        self.mypose = odom.pose#.pose
         self.target_pose_update()
         self.target_distance_update()
 
     def enemyposeCallback(self, pose):
-        self.enemy_pose = pose.pose
+        self.enemy_pose = pose
+        if ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0) and (self.color_flag[5] < self.last_target.time):
+            self.enemy_pose.pose.position.x = self.last_target.position[0]
+            self.enemy_pose.pose.position.y = self.last_target.position[1]
+            q = tf.transformations.quaternion_from_euler(0.0, 0.0, self.last_target.position[2])
+            rotation = Quaternion(*q)
+            self.enemy_pose.pose.orientation = rotation
         self.target_pose_update()
         self.target_distance_update()
+
+    def colorCallback(self, array):
+        self.color_flag = array.data
     
     def show_state(self): # for debug
         print("{}".format(json.dumps(self.target_states,indent=4)))
@@ -237,6 +263,21 @@ class SendPriorityGoal(object):
         succeeded = self.action.wait_for_result(rospy.Duration(self.control_cycle))
         if succeeded:
             self.target_states[target_name]["priority"] = -99
+
+    def send_desired_goal(self,target_name):
+        goal = PoseStamped()
+        goal.pose.position.x = self.target_states[target_name]["pose"][0]
+        goal.pose.position.y = self.target_states[target_name]["pose"][1]
+
+        q = tf.transformations.quaternion_from_euler(0,0,self.target_states[target_name]["pose"][2])
+        goal.pose.orientation.x = q[0]
+        goal.pose.orientation.y = q[1]
+        goal.pose.orientation.z = q[2]
+        goal.pose.orientation.w = q[3]
+
+        self.desired_goal_pub.publish(goal)
+        rospy.sleep(self.control_cycle)
+        self.cancel_goal_pub.publish("Stop")
 
     def top_priority_target(self):
         top_pri_name = "Tomato_N"
@@ -266,6 +307,13 @@ class SendPriorityGoal(object):
         diff_y = PoseStamped_2.pose.position.y - PoseStamped_1.pose.position.y
         return np.sqrt(diff_x**2+diff_y**2)
 
+    # 相手が最後にとった的を保存
+    def last_enemy_target(self):
+        for target_name in self.target_states:
+            if self.target_states != self.target_states_pre:
+                if self.target_states.player == self.side:
+                    self.last_target.name = target_name
+                    self.last_target.position = self.target_states[target_name]["pose"]
 
     def main(self):
         while not rospy.is_shutdown():
@@ -285,18 +333,18 @@ class SendPriorityGoal(object):
                     self.model.trigger('in_time')
 
             elif self.model.state == 'get_enemy_pose':
-                enemy_pose = True #TODO 敵が見えるかどうかのFlag
-                if enemy_pose and self.diff_theta < self.diff_theta_th:
+                print "self.color_flag:",self.color_flag
+                if self.color_flag[2] and self.diff_theta < self.diff_theta_th:
                     self.model.trigger('can_see_and_face')
                 else:
                     self.model.trigger('cannot_see_or_face')
 
             elif self.model.state == 'escape':
-                init_t = rospy.time.now
+                init_t = rospy.Time.now().to_sec()
                 now_t = init_t
                 while now_t - init_t > self.control_cycle:
                     #TODO 回避動作の定義
-                    now_t = rospy.time.now
+                    now_t = rospy.Time.now().to_sec()
                     print now_t
                 self.model.trigger('cycle')
 
@@ -317,8 +365,11 @@ class SendPriorityGoal(object):
                 self.model.trigger('send_target')
 
             elif self.model.state == 'go_to_target':
-                self.send_target_goal(target)
                 print "target_goal:",target
+                if self.use_global_planner:
+                    self.send_desired_goal(target)
+                else:
+                    self.send_target_goal(target)
                 self.model.trigger('cycle')
 
             print "self.model.state:",self.model.state
