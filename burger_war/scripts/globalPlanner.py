@@ -116,7 +116,7 @@ class GlobalPathPlan(object):
         self.weight = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     def into_field(self):
-        XY_LIMIT = 0.72
+        XY_LIMIT = 1.0
 
         x = self.goal[0]
         y = self.goal[1]
