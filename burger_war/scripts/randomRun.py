@@ -77,6 +77,7 @@ class RandomBot():
                     twist = self.calcTwist()
                     #print(twist)
                     self.vel_pub.publish(twist)
+                    rospy.sleep(0.1)     
             r.sleep()
 
 def main():
