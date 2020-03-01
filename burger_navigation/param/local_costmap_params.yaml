@@ -8,7 +8,7 @@ local_costmap:
 
   static_map: false  
   rolling_window: true
-  width: 1 # original 3
-  height: 1 # original 3
+  width: 1.5 # original 3
+  height: 1.5 # original 3
   resolution: 0.02 # original 0.05
   
