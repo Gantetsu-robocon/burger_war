@@ -57,11 +57,10 @@ class EnemyBot(object):
         self.real_target_id = 0
         # publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)   
-        self.vel_pub = rospy.Publisher('VF_cmd_vel', Twist,queue_size=1)
+        self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.color_flag_pub = rospy.Publisher('color_flag', Int8MultiArray, queue_size=10)
         self.resi_per = 0.8
-        self.VF_change_Flag = 0
-
+        self.VF_change_Flag = 3
 
         # camera subscribver
         # please uncoment out if you use camera
@@ -75,7 +74,7 @@ class EnemyBot(object):
             #self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
-        r = rospy.Rate(20)
+        r = rospy.Rate(5)
 
         while not rospy.is_shutdown():
 
@@ -113,17 +112,21 @@ class EnemyBot(object):
                 twist.linear.x = 0.1
                 twist.angular.z = (320*self.resi_per-self.GreenCenter_X) * 0.2 / (320*self.resi_per)
                 self.vel_pub.publish(twist)
-
+            self.VF_change_Flag = 3
             # 敵が近いときのVF VF of C
             if self.VF_change_Flag == 3:
                 if self.cam_AR_size>(4000*self.resi_per*self.resi_per) or self.GreenSize>(45000*self.resi_per*self.resi_per): #近すぎるから離れよう
                     twist.linear.x = -0.1
+                    print('AAA')
                 else :
                     twist.linear.x = 0.0
+                    print('BBB')
                 if self.AR_ID > 0:#相手に背を向けないように動こう
                     twist.angular.z = self.AngleEnemy_AR*0.15/(180*3.141592/180)
+                    print('CCC')
                 elif self.AR_ID == 0:
                     twist.angular.z = 0.0
+                    print('DDD')
                 self.vel_pub.publish(twist)
 ###########################################################################
 
@@ -187,6 +190,8 @@ class EnemyBot(object):
         size_max_h = 0
         center_max_x = 0
         center_max_y = 0
+        rela_pose_y = 0
+        rela_pose_x = 0
 
         for i in range(1, nLabels):
             x, y, w, h, size = data[i]
@@ -213,8 +218,19 @@ class EnemyBot(object):
 
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 0, 0), 3)        
         rela_pose_y= (0.0047*center_max_y/self.resi_per + 0.4775)
+
+        if rela_pose_y > 1.0:
+            #rela_pose_y= (0.0008*size_max*size_max/(self.resi_per*self.resi_per*self.resi_per*self.resi_per) - 2.3454*size_max/self.resi_per + 2764.9)/1000
+            rela_pose_y= (0.0019*size_max*size_max - 3.6647*size_max + 2764.9)/1000 #resize 0.8
+
         rela_pose_x = ((-1.4104*rela_pose_y - 0.1011)*(340*self.resi_per-center_max_x)/self.resi_per +(21.627*rela_pose_y+7.827)) / 1000
-       
+
+
+
+        if size_max < 100*self.resi_per*self.resi_per:        
+            rela_pose_x = 0
+            rela_pose_y = 0
+
         return (center_max_x, center_max_y, size_max ,rela_pose_x,rela_pose_y )
 
     # 緑色マーカの認識
@@ -384,8 +400,10 @@ class EnemyBot(object):
         self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR= self.ARPointSearch()
         self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_w , self.Green_Size_h , self.GreenSize , self.Green_x = self.GreenColor()
         self.BlueCenter_X , self.BlueCenter_Y , self.Blue_Size_w , self.Blue_Size_h , self.BlueSize = self.BlueColor()
-        print('AngleEnemy_AR' , self.AngleEnemy_AR*180/3.141592)
-        print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
+        #print('self.AngleEnemy_AR' , self.AngleEnemy_AR*180/3.141592)
+        #print('self.cam_Point_size' , self.cam_Point_size)
+        #print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
+        #print('(x,y)' , self.cam_Point_x , self.cam_Point_y)
 
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
