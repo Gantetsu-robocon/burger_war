@@ -88,7 +88,7 @@ class EnemyBot(object):
             temp_pose.pose.position.y = self.Relative_Pose_y
             temp_pose.pose.position.x = self.Relative_Pose_x
             #print(pose.pose.position.x , pose.pose.position.y)
-            euler_z = 0 # dummy
+            euler_z = np.pi # dummy
             #Gazebo座標からRviz座標
             pose.pose.position.x = temp_pose.pose.position.y
             pose.pose.position.y = -temp_pose.pose.position.x
