@@ -10,6 +10,7 @@ by Takuya Yamaguhi.
 '''
 
 import rospy
+import rosparam
 import random
 import time
 
@@ -23,6 +24,7 @@ class RandomBot():
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.vel_sub = rospy.Subscriber('cmd_vel',  Twist, self.update_timeem)
+        self.time_em = rospy.Time.now().to_sec()
 
 
     def calcTwist(self):
@@ -49,10 +51,12 @@ class RandomBot():
 
     def update_timeem(self,msg):
         self.time_em = rospy.Time.now().to_sec()
+        #print("Time now = ")
+        #print(self.time_em)
 
 
     def strategy(self,stack_time = 5):
-        r = rospy.Rate(1) # change speed 1fps
+        r = rospy.Rate(0.5) # change speed 1fps
 
         target_speed = 0
         target_turn = 0
@@ -60,8 +64,11 @@ class RandomBot():
         control_turn = 0
         while not rospy.is_shutdown():
             self.time_now = rospy.Time.now().to_sec()
-            print(time_now)
-            if (self.time_now - self.time_em)>stack_time:
+            #print("Time now = ",)
+            #print(self.time_now)
+            self.time_dist = self.time_now - self.time_em 
+            print "Time distance = " ,self.time_dist
+            if self.time_dist > stack_time:
                 twist = self.calcTwist()
                 print(twist)
                 self.vel_pub.publish(twist)
@@ -71,7 +78,7 @@ class RandomBot():
 def main():
         rospy.init_node('random_run')
         bot= RandomBot('Random')
-        bot.strategy
+        bot.strategy()
         
 
 
