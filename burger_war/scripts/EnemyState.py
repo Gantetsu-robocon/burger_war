@@ -75,7 +75,7 @@ class EnemyBot(object):
             #self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
-        r = rospy.Rate(20)
+        r = rospy.Rate(10)
 
         while not rospy.is_shutdown():
 
