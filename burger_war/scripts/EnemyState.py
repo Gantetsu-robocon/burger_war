@@ -75,7 +75,7 @@ class EnemyBot(object):
             #self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
-        r = rospy.Rate(20)
+        r = rospy.Rate(10)
 
         while not rospy.is_shutdown():
 
@@ -102,16 +102,17 @@ class EnemyBot(object):
             twist = Twist()
             
 ########################以下、VisualFeedback#####################################
-
             #BlueマーカへのVF VF of A
             if self.VF_change_Flag == 1:
                 twist.linear.x = 0.2
                 twist.angular.z = (320*self.resi_per-self.BlueCenter_X) * 0.4 / (320*self.resi_per)
-
+                self.vel_pub.publish(twist)
+            
             #GreenマーカへのVF VF of B
             if self.VF_change_Flag == 2:
                 twist.linear.x = 0.1
                 twist.angular.z = (320*self.resi_per-self.GreenCenter_X) * 0.2 / (320*self.resi_per)
+                self.vel_pub.publish(twist)
 
             # 敵が近いときのVF VF of C
             if self.VF_change_Flag == 3:
@@ -123,10 +124,10 @@ class EnemyBot(object):
                     twist.angular.z = self.AngleEnemy_AR*0.15/(180*3.141592/180)
                 elif self.AR_ID == 0:
                     twist.angular.z = 0.0
+                self.vel_pub.publish(twist)
 ###########################################################################
 
-            # cmd_celのpublish
-            self.vel_pub.publish(twist)
+
             # 相対位置・向きのpublish
             self.relative_pose_pub.publish(pose)
 
