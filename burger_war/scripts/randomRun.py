@@ -55,7 +55,7 @@ class RandomBot():
         #print(self.time_em)
 
 
-    def strategy(self,stack_time = 5):
+    def strategy(self,stack_time = 4):
         r = rospy.Rate(0.5) # change speed 1fps
 
         target_speed = 0
@@ -69,9 +69,10 @@ class RandomBot():
             self.time_dist = self.time_now - self.time_em 
             print "Time distance = " ,self.time_dist
             if self.time_dist > stack_time:
-                twist = self.calcTwist()
-                print(twist)
-                self.vel_pub.publish(twist)
+                for i in range(5):
+                    twist = self.calcTwist()
+                    print(twist)
+                    self.vel_pub.publish(twist)
             r.sleep()
 
 
