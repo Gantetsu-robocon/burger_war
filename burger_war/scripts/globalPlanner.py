@@ -116,7 +116,7 @@ class GlobalPathPlan(object):
         self.weight = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     def into_field(self):
-        XY_LIMIT = 0.72
+        XY_LIMIT = 0.10
 
         x = self.goal[0]
         y = self.goal[1]
@@ -286,14 +286,12 @@ class main():
             
             succeeded = self.ac.wait_for_result(rospy.Duration(20))
                 
-            state = self.ac.get_state()
+            # state = self.ac.get_state()
 
-            if succeeded:
-                rospy.loginfo("Succeeded: No."+"("+str(state)+")")
+            if succeeded and self.index == len(path)-1:
                 self.succeeded_pub.publish('succeeded')
-            else:
-                rospy.loginfo("Failed: No."+"("+str(state)+")")
-                self.succeeded_pub.publish('failed')
+            if not succeeded:
+                # self.succeeded_pub.publish('failed')
                 self.ac.cancel_all_goals()
                 break
 
