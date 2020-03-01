@@ -77,7 +77,7 @@ class EnemyBot(object):
             pose = PoseStamped()
             temp_pose.pose.position.y = self.Relative_Pose_y
             temp_pose.pose.position.x = self.Relative_Pose_x
-            euler_z = self.AngleEnemy_AR 
+            euler_z = self.AngleEnemy_AR + 180*3.141592/180
             #　Gazebo座標からRviz座標
             pose.pose.position.x = temp_pose.pose.position.y
             pose.pose.position.y = -temp_pose.pose.position.x
@@ -93,20 +93,20 @@ class EnemyBot(object):
             
 ########################以下、VisualFeedback#####################################
             #BlueマーカへのVF VF of A
-#            if self.AR_ID == 0:
-#                twist.linear.x = 0.1
-#                twist.angular.z = (320-self.BlueCenter_X) * 0.2 / 320
-#            elif self.AR_ID > 0:
-#                twist.linear.x = 0.0
-#                twist.angular.z = 0.0
+ #           if self.AR_ID == 0:
+ #               twist.linear.x = 0.2
+ #               twist.angular.z = (320-self.BlueCenter_X) * 0.4 / 320
+ #           elif self.AR_ID > 0:
+ #               twist.linear.x = 0.0
+ #               twist.angular.z = 0.0
 
             #GreenマーカへのVF VF of B
 #            if self.AR_ID == 0:
 #                twist.linear.x = 0.1
 #                twist.angular.z = (320-self.GreenCenter_X) * 0.2 / 320
 #            elif self.AR_ID > 0:
- #               twist.linear.x = 0.0
- #               twist.angular.z = 0.0
+#                twist.linear.x = 0.0
+#                twist.angular.z = 0.0
 
             # 敵が近いときのVF VF of C
  #           if self.cam_AR_size>4000 or self.GreenSize>45000: #近すぎるから離れよう
@@ -145,7 +145,7 @@ class EnemyBot(object):
             if self.AR_ID > 0 and self.AR_ID < 50:
                 self.ColorFlag.append(1)
             else :
-                self.ColorFlag.append(0)    
+                self.ColorFlag.append(0)
 
             ColorFlag_forPublish = Int8MultiArray(data=self.ColorFlag)
             self.color_flag_pub.publish(ColorFlag_forPublish)
@@ -289,7 +289,7 @@ class EnemyBot(object):
                 center_max_x = center_x
                 center_max_y = center_y
 
-        if size_max < 100:
+        if size_max < 100  or size_max_y < 100:
             size_max = 0
             size_max_x = 0
             size_max_y = 0
@@ -297,7 +297,6 @@ class EnemyBot(object):
             size_max_h = 0
             center_max_x = 0
             center_max_y = 0
-
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 0, 0), 3)        
         return (center_max_x,center_max_y,size_max_w, size_max_h, size_max)
 
