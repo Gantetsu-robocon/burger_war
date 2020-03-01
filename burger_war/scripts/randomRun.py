@@ -10,7 +10,9 @@ by Takuya Yamaguhi.
 '''
 
 import rospy
+import rosparam
 import random
+import time
 
 from geometry_msgs.msg import Twist
 
@@ -21,6 +23,9 @@ class RandomBot():
         self.name = bot_name
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
+        self.vel_sub = rospy.Subscriber('cmd_vel',  Twist, self.update_timeem)
+        self.time_em = rospy.Time.now().to_sec()
+
 
     def calcTwist(self):
         value = random.randint(1,1000)
@@ -44,24 +49,39 @@ class RandomBot():
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
         return twist
 
-    def strategy(self):
-        r = rospy.Rate(1) # change speed 1fps
+    def update_timeem(self,msg):
+        self.time_em = rospy.Time.now().to_sec()
+        #print("Time now = ")
+        #print(self.time_em)
+
+
+    def strategy(self,stack_time = 5):
+        r = rospy.Rate(0.5) # change speed 1fps
 
         target_speed = 0
         target_turn = 0
         control_speed = 0
         control_turn = 0
-
         while not rospy.is_shutdown():
-            twist = self.calcTwist()
-            print(twist)
-            self.vel_pub.publish(twist)
-
+            self.time_now = rospy.Time.now().to_sec()
+            #print("Time now = ",)
+            #print(self.time_now)
+            self.time_dist = self.time_now - self.time_em 
+            print "Time distance = " ,self.time_dist
+            if self.time_dist > stack_time:
+                twist = self.calcTwist()
+                print(twist)
+                self.vel_pub.publish(twist)
             r.sleep()
 
 
+def main():
+        rospy.init_node('random_run')
+        bot= RandomBot('Random')
+        bot.strategy()
+        
+
+
 if __name__ == '__main__':
-    rospy.init_node('random_run')
-    bot = RandomBot('Random')
-    bot.strategy()
+    main()
 
