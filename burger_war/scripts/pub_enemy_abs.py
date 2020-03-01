@@ -15,18 +15,27 @@ from std_msgs.msg import Int8MultiArray
 class PubEnemyPose():
 
     def __init__(self):
-        self.enemy_ps = PoseStamped()
+
+        #Get parameter
+        self.rate = rospy.get_param("~rate", 1)
+        #self.side = rospy.get_param("~side", "r")
+
+        #Transformer, Listener, Subscriber, Publisher
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
         self.enemy_pub = rospy.Publisher('absolute_pos', PoseStamped, queue_size=10)
         self.flag_sub = rospy.Subscriber('/color_flag', Int8MultiArray,self.flagCallback)
         self.flag_pub = rospy.Publisher('color_flag_time', Int8MultiArray, queue_size=10)
 
+        #Initialize 
+        self.enemy_ps = PoseStamped()
+        self.enemy_ps.pose.position.x = 1.3
         q = tf.transformations.quaternion_from_euler(0.0, 0.0, math.pi)
         rotation = Quaternion(*q)
         self.enemy_ps.pose.orientation = rotation
         self.flags = [0, 0, 0, 0, 0, 0]
         self.initial_time = rospy.Time.now().secs
+
 
     def flagCallback(self, data):
         for i, flag in enumerate(data.data):
@@ -53,10 +62,12 @@ class PubEnemyPose():
         self.enemy_pub.publish(msg)
 
     def main(self):
-        rate = rospy.Rate(5)
+        rate = rospy.Rate(self.rate)
+        
         while not rospy.is_shutdown():
             self.publish_flags()
             self.lis_pub_enemy_pose()
+            rate.sleep()
 
 if __name__ == '__main__':
     rospy.init_node('pub_enemy_abs')

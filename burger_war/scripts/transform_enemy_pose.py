@@ -16,11 +16,16 @@ from geometry_msgs.msg import Quaternion
 class TransformEnemy():
 
     def __init__(self):
+        #Get parameter
+        self.rate = rospy.get_param("~rate", 1)
+        #self.side = rospy.get_param("~side", "r")
+
+        #Broadcaster, Subscriber
         self.br = tf2_ros.TransformBroadcaster()
-        self.enemy_ps = PoseStamped()
         self.enemy_sub = rospy.Subscriber('/relative_pose', PoseStamped, self.enemyCallback)
         
-
+        #Initialize
+        self.enemy_ps = PoseStamped()
         q = tf.transformations.quaternion_from_euler(0.0, 0.0, math.pi)
         rotation = Quaternion(*q)
         self.enemy_ps.pose.position.x = 2.6
@@ -43,7 +48,7 @@ class TransformEnemy():
     
 
     def main(self):
-        rate = rospy.Rate(5)
+        rate = rospy.Rate(self.rate)
         while not rospy.is_shutdown():
             self.tf_enemy_pose()
             rate.sleep()
