@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-from std_msgs.msg import String, Int8MultiArray
+from std_msgs.msg import String, Int8MultiArray, Int8
 import json
 import numpy as np
 from geometry_msgs.msg import PoseStamped, Quaternion, Point, Twist, Pose
@@ -47,6 +47,7 @@ class SendPriorityGoal(object):
     def __init__(self):
         rospy.init_node('send_priority_goal')
 
+        self.enemy_pose_pub = rospy.Publisher("send_enemy_pose", PoseStamped, queue_size=1)
         #State machine
         self.model = Matter()
         self.machine = GraphMachine(model=self.model, states=self.model.states, initial='search_enemy_distance', 
@@ -56,6 +57,10 @@ class SendPriorityGoal(object):
 
         #Get prameter
         self.side = rospy.get_param("~side", "r")
+        if self.side == "r":
+            self.enemy_side = "b"
+        else:
+            self.enemy_side = "r"
         self.focus_dist = rospy.get_param("~focous_dist",0.20) 
         self.enemy_distance_th = rospy.get_param("~enemy_distance_th",0.50)
         self.time_th = rospy.get_param("~time_th", 0)
@@ -135,26 +140,32 @@ class SendPriorityGoal(object):
             self.my_pose_sub = rospy.Subscriber('odom',Odometry,self.myodomCallback)
         else:
             self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
-
         
-        #Action client
-        self.action = actionlib.SimpleActionClient('move_base', MoveBaseAction)
-        while not self.action.wait_for_server(rospy.Duration(5)):
-            rospy.loginfo("Waiting for the move_base action server to come up")
-        rospy.loginfo("The server comes up")
-        
+        #Publisher
         if self.use_global_planner:
             #Goal publisher
             self.desired_goal_pub = rospy.Publisher("desired_pose", PoseStamped, queue_size=1)
             self.cancel_goal_pub = rospy.Publisher("reset_pathplan", String, queue_size=1)
         else:
+            #Action client
+            self.action = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+            while not self.action.wait_for_server(rospy.Duration(5)):
+                rospy.loginfo("Waiting for the move_base action server to come up")
+            rospy.loginfo("The server comes up")
             # Generate Goal
             self.goal = MoveBaseGoal()
             self.goal.target_pose.header.frame_id = 'map'
             self.goal.target_pose.header.stamp = rospy.Time.now()
+        
+        self.vf_flag_pub = rospy.Publisher("vf_flag", Int8, queue_size=1)
 
     def target_pose_update(self):
         #相手の（x,y,th）を持ってくる
+        send_ene_pose = PoseStamped()
+        send_ene_pose.header.frame_id = "map"
+        send_ene_pose.pose = self.enemy_pose.pose
+        self.enemy_pose_pub.publish(send_ene_pose)
+
         q_e = self.enemy_pose.pose.orientation
         e_e = tf.transformations.euler_from_quaternion((q_e.x,q_e.y,q_e.z,q_e.w))
         th_e = e_e[2]
@@ -174,6 +185,12 @@ class SendPriorityGoal(object):
                     pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
                 self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
                     pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
+                self.target_states["RE_L"]["pose"] = [pose_m.x-(0.07+self.focus_dist)*np.sin(th_m),
+                    pose_m.y+(0.07+self.focus_dist)*np.cos(th_m), th_m-np.pi/2]
+                self.target_states["RE_R"]["pose"] = [pose_m.x+(0.07+self.focus_dist)*np.sin(th_m),
+                    pose_m.y-(0.07+self.focus_dist)*np.cos(th_m), th_m+np.pi/2]
+                self.target_states["RE_B"]["pose"] = [pose_m.x-(0.1+self.focus_dist)*np.cos(th_m),
+                    pose_m.y-(0.1+self.focus_dist)*np.sin(th_m), th_m]
             elif self.side == "b":
                 self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
                     pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
@@ -181,6 +198,12 @@ class SendPriorityGoal(object):
                     pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
                 self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
                     pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
+                self.target_states["BL_L"]["pose"] = [pose_m.x-(0.07+self.focus_dist)*np.sin(th_m),
+                    pose_m.y+(0.07+self.focus_dist)*np.cos(th_m), th_m-np.pi/2]
+                self.target_states["BL_R"]["pose"] = [pose_m.x+(0.07+self.focus_dist)*np.sin(th_m),
+                    pose_m.y-(0.07+self.focus_dist)*np.cos(th_m), th_m+np.pi/2]
+                self.target_states["BL_B"]["pose"] = [pose_m.x-(0.1+self.focus_dist)*np.cos(th_m),
+                    pose_m.y-(0.1+self.focus_dist)*np.sin(th_m), th_m]
 
     def target_player_update(self,target_data):
         for info in target_data:
@@ -247,12 +270,14 @@ class SendPriorityGoal(object):
 
     def enemyposeCallback(self, pose):
         self.enemy_pose = pose
+        """
         if ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0) and (self.color_flag[5] < self.last_target.time):
+            print "color_falg:",self.color_flag
             self.enemy_pose.pose.position.x = self.last_target.position[0]
             self.enemy_pose.pose.position.y = self.last_target.position[1]
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, self.last_target.position[2])
-            rotation = Quaternion(*q)
-            self.enemy_pose.pose.orientation = rotation
+            self.enemy_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
+        """
         self.target_pose_update()
         self.target_distance_update()
 
@@ -265,6 +290,10 @@ class SendPriorityGoal(object):
     def show_distnce(self):
         for target_name in self.target_states:
             print target_name, self.target_states[target_name]["distance"]
+
+    def show_pose(self):
+        for target_name in self.target_states:
+            print target_name, self.target_states[target_name]["pose"]
 
     def send_target_goal(self,target_name):
         self.goal.target_pose.pose.position.x = self.target_states[target_name]["pose"][0]
@@ -280,8 +309,11 @@ class SendPriorityGoal(object):
 
     def send_desired_goal(self,target_name):
         goal = PoseStamped()
+        goal.header.frame_id = "map"
         goal.pose.position.x = self.target_states[target_name]["pose"][0]
         goal.pose.position.y = self.target_states[target_name]["pose"][1]
+        print self.target_states[target_name]["pose"][0],self.target_states[target_name]["pose"][1]
+
 
         q = tf.transformations.quaternion_from_euler(0,0,self.target_states[target_name]["pose"][2])
         goal.pose.orientation.x = q[0]
@@ -289,9 +321,35 @@ class SendPriorityGoal(object):
         goal.pose.orientation.z = q[2]
         goal.pose.orientation.w = q[3]
 
-        self.desired_goal_pub.publish(goal)
-        rospy.sleep(self.control_cycle)
-        self.cancel_goal_pub.publish("Stop")
+        init_t = rospy.Time.now().to_sec()
+        now_t = init_t
+        """
+        if self.color_flag[1]:
+            #vf Aスタート
+            print "vf A starts"
+            self.vf_flag_pub.publish(data=1)
+            while (now_t - init_t)< self.control_cycle:
+                if self.color_flag[4]:
+                    break
+                now_t = rospy.Time.now().to_sec()
+            self.vf_flag_pub.publish(data=0)
+        """
+        if self.color_flag[2] and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R" \
+            or target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
+            #vf Bスタート
+            print "vf B starts"
+            self.vf_flag_pub.publish(data=2)
+            while (now_t - init_t) < self.control_cycle:
+                if self.color_flag[3]:
+                    break
+                now_t = rospy.Time.now().to_sec()
+            self.vf_flag_pub.publish(data=0)
+        else:
+            #ゴールをGlobal Plannerに送る
+            self.desired_goal_pub.publish(goal)
+            while (now_t - init_t) < self.control_cycle:
+                now_t = rospy.Time.now().to_sec()
+            self.cancel_goal_pub.publish("Stop")
 
     def top_priority_target(self):
         top_pri_name = "Tomato_N"
@@ -324,8 +382,8 @@ class SendPriorityGoal(object):
     # 相手が最後にとった的を保存
     def last_enemy_target(self):
         for target_name in self.target_states:
-            if self.target_states != self.target_states_pre:
-                if self.target_states.player == self.side:
+            if self.target_states[target_name]["player"] != self.target_states_pre[target_name]["player"]:
+                if self.target_states[target_name]["player"] == self.enemy_side:
                     self.last_target.name = target_name
                     self.last_target.position = self.target_states[target_name]["pose"]
 
@@ -359,10 +417,11 @@ class SendPriorityGoal(object):
             elif self.model.state == 'escape':
                 init_t = rospy.Time.now().to_sec()
                 now_t = init_t
-                while now_t - init_t > self.control_cycle:
+                while (now_t - init_t) < self.control_cycle:
                     #TODO 回避動作の定義
+                    self.vf_flag_pub.publish(date=3) #vf C start
                     now_t = rospy.Time.now().to_sec()
-                    print now_t
+                self.vf_flag_pub.publish(data = 0) #vf stop
                 self.model.trigger('cycle')
 
             elif self.model.state == 'search_near_target':
@@ -390,7 +449,8 @@ class SendPriorityGoal(object):
                 self.model.trigger('cycle')
 
             print "self.model.state:",self.model.state
-            self.show_distnce()
+            print "self.last_enemy_pose:", self.last_target.position
+            #self.show_pose()
         return
 
 if __name__ == '__main__':
