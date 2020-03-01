@@ -218,6 +218,9 @@ class EnemyBot(object):
 
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 0, 0), 3)        
         rela_pose_y= (0.0047*center_max_y/self.resi_per + 0.4775)
+        if rela_pose_y > 1.0:
+            #rela_pose_y= (0.0008*size_max*size_max/(self.resi_per*self.resi_per*self.resi_per*self.resi_per) - 2.3454*size_max/self.resi_per + 2764.9)/1000
+            rela_pose_y= (0.0019*size_max*size_max - 3.6647*size_max + 2764.9)/1000 #resize 0.8
         rela_pose_x = ((-1.4104*rela_pose_y - 0.1011)*(340*self.resi_per-center_max_x)/self.resi_per +(21.627*rela_pose_y+7.827)) / 1000
         if size_max < 100*self.resi_per*self.resi_per:        
             rela_pose_x = 0
