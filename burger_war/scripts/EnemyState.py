@@ -309,6 +309,7 @@ class EnemyBot(object):
     def ARPointSearch(self):
         if self.real_target_id == 0:
             return (0,0,0,0,0)
+            #
         aruco = cv2.aruco
         dictionary = aruco.getPredefinedDictionary(aruco.DICT_ARUCO_ORIGINAL)
         corners, ids, rejectedImgPoints = aruco.detectMarkers(self.img, dictionary)
