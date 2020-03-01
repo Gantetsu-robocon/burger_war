@@ -11,7 +11,7 @@
     </node>
     <node pkg="burger_war" type="EnemyState.py" name="relative_enemy_camera" output="screen">
       <param name="rate" value="5"/>
-      <param name="resize_rate" value="0.6"/> <!-- 0 〜 1 -->
+      <param name="resize_rate" value="0.8"/> <!-- 0 〜 1 -->
     </node>
 
   <!-- Publish my pose topic -->  

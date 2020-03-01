@@ -168,19 +168,31 @@ class SendPriorityGoal(object):
         self.diff_theta = th_e - th_m
         if not self.ignore_enemy:
             if self.side == "r":
-                self.target_states["BL_L"]["pose"] = [pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
-                    pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
-                self.target_states["BL_R"]["pose"] = [pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
-                    pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
-                self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
-                    pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
+                self.target_states["BL_L"]["pose"] = [pose_e.x-(0.07)*np.sin(th_e),
+                    pose_e.y+(0.07)*np.cos(th_e), th_e-np.pi/2]
+                    #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
+                    #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
+                self.target_states["BL_R"]["pose"] = [pose_e.x+(0.07)*np.sin(th_e),
+                    pose_e.y-(0.07)*np.cos(th_e), th_e+np.pi/2]
+                    #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
+                    #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
+                self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1)*np.cos(th_e),
+                    pose_e.y-(0.1)*np.sin(th_e), th_e]
+                    #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
+                    #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
             elif self.side == "b":
-                self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
-                    pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
-                self.target_states["RE_R"]["pose"] = [pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
-                    pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
-                self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
-                    pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
+                self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07)*np.sin(th_e),
+                    pose_e.y+(0.07)*np.cos(th_e), th_e-np.pi/2]
+                    #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
+                    #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
+                self.target_states["RE_R"]["pose"] = [pose_e.x+(0.07)*np.sin(th_e),
+                    pose_e.y-(0.07)*np.cos(th_e), th_e+np.pi/2]
+                    #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
+                    #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
+                self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1)*np.cos(th_e),
+                    pose_e.y-(0.1)*np.sin(th_e), th_e]
+                    #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
+                    #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
 
     def target_player_update(self,target_data):
         for info in target_data:
