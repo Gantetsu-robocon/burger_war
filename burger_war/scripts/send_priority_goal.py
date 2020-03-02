@@ -14,8 +14,11 @@ import os
 import actionlib
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-
 from transitions.extensions import GraphMachine
+import copy
+
+#for debug
+from IPython.terminal.debugger import set_trace
 
 class Matter(object):
     def __init__(self):
@@ -92,7 +95,7 @@ class SendPriorityGoal(object):
             del self.target_states["RE_B"],self.target_states["RE_R"],self.target_states["RE_L"] ,self.target_states["BL_B"],self.target_states["BL_R"],self.target_states["BL_L"]
 
         #Copy previous target state
-        self.target_states_pre = self.target_states
+        self.target_states_pre = copy.deepcopy(self.target_states)
         self.last_target = Target()
 
         #Initialize robot position
@@ -205,14 +208,21 @@ class SendPriorityGoal(object):
                     #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
                     #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
 
-
-
     def target_player_update(self,target_data):
         for info in target_data:
             for target_name in self.target_states:
                 if info.get("name") == target_name:
                     self.target_states_pre[target_name]["player"] = self.target_states[target_name]["player"]
                     self.target_states[target_name]["player"] = info.get("player")
+
+    # 相手が最後にとった的を保存
+    def last_enemy_target(self):
+        for target_name in self.target_states:
+            #print self.target_states[target_name]["player"], self.target_states_pre[target_name]["player"]
+            if self.target_states[target_name]["player"] != self.target_states_pre[target_name]["player"]:
+                if self.target_states[target_name]["player"] == self.enemy_side:
+                    self.last_target.name = target_name
+                    self.last_target.position = self.target_states[target_name]["pose"]
 
     def pose_target_distance(self, target_name, PoseStamped):
         diff_x = self.target_states[target_name]["pose"][0]-PoseStamped.pose.position.x
@@ -272,14 +282,11 @@ class SendPriorityGoal(object):
 
     def enemyposeCallback(self, pose):
         self.enemy_pose = pose
-        """
         if ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0) and (self.color_flag[5] < self.last_target.time):
-            print "color_falg:",self.color_flag
             self.enemy_pose.pose.position.x = self.last_target.position[0]
             self.enemy_pose.pose.position.y = self.last_target.position[1]
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, self.last_target.position[2])
             self.enemy_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
-        """
         self.target_pose_update()
         self.target_distance_update()
 
@@ -385,13 +392,6 @@ class SendPriorityGoal(object):
         diff_y = PoseStamped_2.pose.position.y - PoseStamped_1.pose.position.y
         return np.sqrt(diff_x**2+diff_y**2)
 
-    # 相手が最後にとった的を保存
-    def last_enemy_target(self):
-        for target_name in self.target_states:
-            if self.target_states[target_name]["player"] != self.target_states_pre[target_name]["player"]:
-                if self.target_states[target_name]["player"] == self.enemy_side:
-                    self.last_target.name = target_name
-                    self.last_target.position = self.target_states[target_name]["pose"]
 
     def main(self):
         while not rospy.is_shutdown():
@@ -430,7 +430,7 @@ class SendPriorityGoal(object):
                 now_t = init_t
                 while (now_t - init_t) < self.control_cycle:
                     #TODO 回避動作の定義
-                    self.vf_flag_pub.publish(Int8(date=3)) #vf C start
+                    self.vf_flag_pub.publish(Int8(data=3)) #vf C start
                     now_t = rospy.Time.now().to_sec()
                 self.vf_flag_pub.publish(Int8(data = 0)) #vf stop
                 self.model.trigger('cycle')
