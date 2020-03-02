@@ -330,23 +330,23 @@ class SendPriorityGoal(object):
 
         init_t = rospy.Time.now().to_sec()
         now_t = init_t
-        """
-        if self.color_flag[1]:
+        if self.color_flag[1] and self.pose_target_distance(target_name,self.my_pose) <1.0* self.focus_dist:
             #vf Aスタート
+            print ""
             print "vf A starts"
+            print ""
             self.vf_flag_pub.publish(data=1)
             while (now_t - init_t)< self.control_cycle:
                 if self.color_flag[4]:
                     break
                 now_t = rospy.Time.now().to_sec()
             self.vf_flag_pub.publish(data=0)
-        """
         #if self.color_flag[2] and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R" \
         #    or target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
-        if self.color_flag[2] and ((self.my_pose.pose.position.x - self.enemy_pose.pose.position.x)**2 + (self.my_pose.pose.position.y - self.enemy_pose.pose.position.y)**2) < (self.focus_dist*5)**2:
+        elif self.color_flag[2] and self.pose_pose_distance(self.my_pose,self.enemy_pose) < self.focus_dist*5:
             #vf Bスタート
             print ""
-            print "vf B starts!!!!!"
+            print "vf B starts"
             print ""
             self.vf_flag_pub.publish(Int8(data=2))
             while (now_t - init_t) < self.control_cycle:
