@@ -51,7 +51,6 @@ class EnemyBot(object):
         self.Green_Size_h = 0
         self.GreenSize = 0.0
         self.Green_x = 0.0
-        self.Greencount = 0
         # 青マーカ
         self.BlueCenter_X = 0
         self.BlueCenter_Y = 0
@@ -66,6 +65,7 @@ class EnemyBot(object):
         self.color_flag_pub = rospy.Publisher('color_flag', Int16MultiArray, queue_size=10)
         self.VF_change_Flag = 0
 
+
         # camera subscribver
         # please uncoment out if you use camera
         if use_camera:
@@ -75,7 +75,6 @@ class EnemyBot(object):
             self.target_id_sub = rospy.Subscriber('target_id', MarkerArray, self.targetIdCallback)
             self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
             self.vf_flag_pub =rospy.Subscriber('/vf_flag', Int8, self.VFFlagCallback)
-            #self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
         r = rospy.Rate(self.rate)
@@ -90,19 +89,7 @@ class EnemyBot(object):
 
             #euler_z = self.AngleEnemy_AR + 180*3.141592/180
             #　Gazebo座標からRviz座標
- #           if self.AR_ID < 50 and self.cam_Point_size > 0.0:
-#                if self.cam_Point_size > self.GreenSize:
- #                   if self.cam_Point_x > self.GreenCenter_X:
- #                       self.AngleEnemy_AR = 45*3.141592/180
-  #                  elif self.cam_Point_x < self.GreenCenter_X:
- #                       self.AngleEnemy_AR = -45*3.141592/180
-   #             if self.cam_Point_size < self.GreenSize:
-  #                  self.AngleEnemy_AR = -180*3.141592/180
-
-
             euler_z = self.AngleEnemy_AR + np.pi
-            #print(self.AngleEnemy_AR*180/3.141592)
-            print(euler_z*180/3.141592)
             #Gazebo座標からRviz座標
             pose.pose.position.x = temp_pose.pose.position.y
             pose.pose.position.y = -temp_pose.pose.position.x
@@ -259,13 +246,10 @@ class EnemyBot(object):
         size_max_h = 0
         center_max_x = 0
         center_max_y = 0
-        self.Greencount = 0
+
         for i in range(1, nLabels):
             x, y, w, h, size = data[i]
             center_x, center_y = center[i]
-            if size > 100*self.resi_per*self.resi_per:
-                self.Greencount += 1
-
             if size > size_max:
                 size_max_x = x
                 size_max_y = y
@@ -337,7 +321,7 @@ class EnemyBot(object):
     def ARPointSearch(self):
         if self.real_target_id == 0:
             return (0,0,0,0,0)
-            
+            #
         aruco = cv2.aruco
         dictionary = aruco.getPredefinedDictionary(aruco.DICT_ARUCO_ORIGINAL)
         corners, ids, rejectedImgPoints = aruco.detectMarkers(self.img, dictionary)
@@ -407,15 +391,11 @@ class EnemyBot(object):
             rospy.logerr(e)
 
         self.cam_Point_x , self.cam_Point_y , self.cam_Point_size , self.Relative_Pose_x , self.Relative_Pose_y = self.ColorCenter()
+        self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR= self.ARPointSearch()
         self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_w , self.Green_Size_h , self.GreenSize , self.Green_x = self.GreenColor()
         self.BlueCenter_X , self.BlueCenter_Y , self.Blue_Size_w , self.Blue_Size_h , self.BlueSize = self.BlueColor()
-
-        self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR= self.ARPointSearch()
-
-
-
         #print('AngleEnemy_AR' , self.AngleEnemy_AR*180/3.141592)
-        #print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
+        print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
 
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
