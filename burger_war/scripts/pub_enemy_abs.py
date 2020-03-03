@@ -10,7 +10,7 @@ import tf
 import math 
 from geometry_msgs.msg import PoseStamped 
 from geometry_msgs.msg import Quaternion
-from std_msgs.msg import Int8MultiArray
+from std_msgs.msg import Int16MultiArray
 
 class PubEnemyPose():
 
@@ -24,8 +24,8 @@ class PubEnemyPose():
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
         self.enemy_pub = rospy.Publisher('absolute_pos', PoseStamped, queue_size=10)
-        self.flag_sub = rospy.Subscriber('/color_flag', Int8MultiArray,self.flagCallback)
-        self.flag_pub = rospy.Publisher('color_flag_time', Int8MultiArray, queue_size=10)
+        self.flag_sub = rospy.Subscriber('/color_flag', Int16MultiArray,self.flagCallback)
+        self.flag_pub = rospy.Publisher('color_flag_time', Int16MultiArray, queue_size=10)
 
         #Initialize 
         self.enemy_ps = PoseStamped()
@@ -45,7 +45,7 @@ class PubEnemyPose():
             self.flags[5] = current_time - self.initial_time
 
     def publish_flags(self):
-        array_forPublish = Int8MultiArray(data=self.flags)
+        array_forPublish = Int16MultiArray(data=self.flags)
         self.flag_pub.publish(array_forPublish)
 
     def lis_pub_enemy_pose(self):

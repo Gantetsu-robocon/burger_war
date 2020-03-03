@@ -70,10 +70,10 @@ class RandomBot():
             #print("Time now = ",)
             #print(self.time_now)
             self.time_dist = self.time_now - self.time_em 
-            print "Time distance = " ,self.time_dist
+            #print "Time distance = " ,self.time_dist
             if self.time_dist > self.stack_time:
+                print"randomRun"
                 for i in range(5):
-                    print"randomRun"
                     twist = self.calcTwist()
                     #print(twist)
                     self.vel_pub.publish(twist)

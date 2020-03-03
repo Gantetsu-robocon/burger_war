@@ -264,7 +264,7 @@ class main():
 
         pathplanner = GlobalPathPlan(start, goal)
         path = pathplanner.searchPath()
-        rospy.loginfo("path points : " + str(path))
+        #rospy.loginfo("path points : " + str(path))
 
         self.goal = MoveBaseGoal()
         self.goal.target_pose.header.frame_id = 'map'
@@ -281,7 +281,7 @@ class main():
             q = tf.transformations.quaternion_from_euler(0, 0, pose[2])
             self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
 
-            rospy.loginfo("Sending goal:" + str(pose))                                          
+            #rospy.loginfo("Sending goal:" + str(pose))                                          
             self.ac.send_goal(self.goal)
             
             succeeded = self.ac.wait_for_result(rospy.Duration(20))

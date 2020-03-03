@@ -9,7 +9,7 @@
       <param name="focous_dist" value="0.18"/>
       <param name="enemy_distance_th" value="0.50"/>
       <param name="time_th" value="0"/>
-      <param name="control_cycle" value="5.0"/>
+      <param name="control_cycle" value="3.0"/>
       <param name="diff_theta_th" value="0.784"/>
       <param name="near_dist_th" value="0.8"/>
       <param name="use_global_planner" value="True"/>
