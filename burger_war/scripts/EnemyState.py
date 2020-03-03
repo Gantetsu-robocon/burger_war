@@ -75,6 +75,7 @@ class EnemyBot(object):
             self.target_id_sub = rospy.Subscriber('target_id', MarkerArray, self.targetIdCallback)
             self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
             self.vf_flag_pub =rospy.Subscriber('/vf_flag', Int8, self.VFFlagCallback)
+            #self.image_sub= cv2.resize(temp_img, dsize=None, fx=0.7, fy=0.7, interpolation=cv2.INTER_NEAREST)
             
     def strategy(self):
         r = rospy.Rate(self.rate)
@@ -395,7 +396,7 @@ class EnemyBot(object):
         self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_w , self.Green_Size_h , self.GreenSize , self.Green_x = self.GreenColor()
         self.BlueCenter_X , self.BlueCenter_Y , self.Blue_Size_w , self.Blue_Size_h , self.BlueSize = self.BlueColor()
         #print('AngleEnemy_AR' , self.AngleEnemy_AR*180/3.141592)
-        print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
+        #print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
 
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
