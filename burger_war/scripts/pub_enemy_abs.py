@@ -54,7 +54,8 @@ class PubEnemyPose():
         try:
             t = self.tfBuffer.lookup_transform('map', 'enemy_pos', rospy.Time(0), rospy.Duration(1.0))
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            rospy.logerr('LookupTransform Eroor !')
+            pass
+            #rospy.logerr('LookupTransform Eroor !')
         if (self.flags[0] + self.flags[2] + self.flags[3]) != 0 :
             self.enemy_ps.pose.position = t.transform.translation
             self.enemy_ps.pose.orientation = t.transform.rotation
