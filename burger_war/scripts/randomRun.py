@@ -73,9 +73,9 @@ class RandomBot():
             self.time_dist = self.time_now - self.time_em 
             #print "Time distance = " ,self.time_dist
             if self.time_dist > self.stack_time:
-                ""
+                print ""
                 print"randomRun"
-                ""
+                print ""
                 for i in range(5):
                     twist = self.calcTwist()
                     #print(twist)
