@@ -24,7 +24,7 @@ class RandomBot():
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.vel_sub = rospy.Subscriber('cmd_vel',  Twist, self.update_timeem)
-        self.stack_time = rospy.get_param("~stack", 3)
+        self.stack_time = rospy.get_param("~stack", 5)
         self.time_em = rospy.Time.now().to_sec()
         self.time_now = rospy.Time.now().to_sec()
         self.flag = -3
@@ -53,7 +53,8 @@ class RandomBot():
         return twist
 
     def update_timeem(self,msg):
-        self.time_em = rospy.Time.now().to_sec()
+        if not (msg.linear.x == 0.0 and msg.angular.z == 0.0):
+            self.time_em = rospy.Time.now().to_sec()
         #print("Time now = ")
         #print(self.time_em)
 
@@ -72,7 +73,9 @@ class RandomBot():
             self.time_dist = self.time_now - self.time_em 
             #print "Time distance = " ,self.time_dist
             if self.time_dist > self.stack_time:
+                print ""
                 print"randomRun"
+                print ""
                 for i in range(5):
                     twist = self.calcTwist()
                     #print(twist)
