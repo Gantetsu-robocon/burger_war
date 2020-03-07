@@ -30,6 +30,13 @@ class EnemyBot(object):
         self.rate = rospy.get_param("~rate", 5)
         self.resi_per = rospy.get_param("~resize_rate", 0.8)
 
+        self.k_p = 10
+        self.k_i = 0.01
+
+        self.diff_i_a = 0
+        self.diff_i_b = 0
+        self.diff_i_c = 0
+
         # カメラ画像上での赤マーカ位置,サイズ
         self.cam_Point_x = 0.0
         self.cam_Point_y = 0.0
@@ -108,13 +115,19 @@ class EnemyBot(object):
             #BlueマーカへのVF VF of A
             if self.VF_change_Flag == 1:
                 twist.linear.x = 0.2
-                twist.angular.z = (320*self.resi_per-self.BlueCenter_X) * 0.4 / (320*self.resi_per)
+                diff_p = (320*self.resi_per-self.BlueCenter_X) / (320*self.resi_per)
+                if self.diff_i_a < 100000:
+                    self.diff_i_a += diff_p
+                twist.angular.z = self.k_p*diff_p + self.k_i*self.diff_i_a
                 self.vel_pub.publish(twist)
             
             #GreenマーカへのVF VF of B
             if self.VF_change_Flag == 2:
                 twist.linear.x = 0.1
-                twist.angular.z = (320*self.resi_per-self.GreenCenter_X) * 0.2 / (320*self.resi_per)
+                diff_p = (320*self.resi_per-self.GreenCenter_X) / (320*self.resi_per)
+                if self.diff_i_b < 100000:
+                    self.diff_i_b += diff_p
+                twist.angular.z = self.k_p*diff_p + self.k_i*self.diff_i_b 
                 self.vel_pub.publish(twist)
 
             # 敵が近いときのVF VF of C
