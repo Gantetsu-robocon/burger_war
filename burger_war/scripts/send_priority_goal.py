@@ -91,8 +91,10 @@ class SendPriorityGoal(object):
         if self.ignore_enemy:
             del self.target_states["RE_B"],self.target_states["RE_R"],self.target_states["RE_L"] ,self.target_states["BL_B"],self.target_states["BL_R"],self.target_states["BL_L"]
 
-        #Copy previous target state
-        self.target_states_pre = self.target_states
+        #Initilize for last enemy target
+        self.target_states_pre_player = {}
+        for target_name in self.target_states:
+            self.target_states_pre_player[target_name] = "n"
         self.last_target = Target()
 
         #Initialize robot position
@@ -211,7 +213,7 @@ class SendPriorityGoal(object):
         for info in target_data:
             for target_name in self.target_states:
                 if info.get("name") == target_name:
-                    self.target_states_pre[target_name]["player"] = self.target_states[target_name]["player"]
+                    self.target_states_pre_player[target_name] = self.target_states[target_name]["player"]
                     self.target_states[target_name]["player"] = info.get("player")
 
     def pose_target_distance(self, target_name, PoseStamped):
@@ -253,6 +255,7 @@ class SendPriorityGoal(object):
                 self.target_states[target_name]["priority"] = -dist #+point
 
     def serverCallback(self, data):
+        #self.target_states_pre = self.target_states
         server_data = json.loads(data.data)
         target_info = server_data["targets"]
         self.target_player_update(target_info)
@@ -272,14 +275,12 @@ class SendPriorityGoal(object):
 
     def enemyposeCallback(self, pose):
         self.enemy_pose = pose
-        """
         if ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0) and (self.color_flag[5] < self.last_target.time):
             print "color_falg:",self.color_flag
             self.enemy_pose.pose.position.x = self.last_target.position[0]
             self.enemy_pose.pose.position.y = self.last_target.position[1]
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, self.last_target.position[2])
             self.enemy_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
-        """
         self.target_pose_update()
         self.target_distance_update()
 
@@ -388,7 +389,7 @@ class SendPriorityGoal(object):
     # 相手が最後にとった的を保存
     def last_enemy_target(self):
         for target_name in self.target_states:
-            if self.target_states[target_name]["player"] != self.target_states_pre[target_name]["player"]:
+            if self.target_states[target_name]["player"] != self.target_states_pre_player[target_name]:
                 if self.target_states[target_name]["player"] == self.enemy_side:
                     self.last_target.name = target_name
                     self.last_target.position = self.target_states[target_name]["pose"]
