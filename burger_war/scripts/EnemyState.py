@@ -30,11 +30,23 @@ class EnemyBot(object):
         self.rate = rospy.get_param("~rate", 5)
         self.resi_per = rospy.get_param("~resize_rate", 0.8)
 
-        self.k_p = 10
-        self.k_i = 0.01
+        self.k_p_A_rot = 1.0 #pゲイン（Pのみのときの最高速度）
+        self.k_i_A_rot = 0.01 #iゲインs
+        self.k_p_A_adv = 1.0 #pゲイン（Pのみのときの最高速度）
+        self.k_i_A_adv = 0.01 #iゲインs
+        self.k_p_B_rot = 1.0 #pゲイン（Pのみのときの最高速度）
+        self.k_i_B_rot = 0.01 #iゲインs
+        self.k_p_B_adv = 1.0 #pゲイン（Pのみのときの最高速度）
+        self.k_i_B_adv = 0.01 #iゲインs
 
-        self.diff_i_a = 0
-        self.diff_i_b = 0
+        self.diff_p_A_rot = 0
+        self.diff_p_B_rot = 0
+        self.diff_i_A_rot = 0
+        self.diff_i_B_rot = 0
+        self.diff_p_A_adv = 0
+        self.diff_p_B_adv = 0
+        self.diff_i_A_adv = 0
+        self.diff_i_B_adv = 0
         self.diff_i_c = 0
 
         # カメラ画像上での赤マーカ位置,サイズ
@@ -114,30 +126,42 @@ class EnemyBot(object):
 ########################以下、VisualFeedback#####################################
             #BlueマーカへのVF VF of A
             if self.VF_change_Flag == 1:
-                twist.linear.x = 0.2
-                diff_p = (320*self.resi_per-self.BlueCenter_X) / (320*self.resi_per)
-                if self.diff_i_a < 100000:
-                    self.diff_i_a += diff_p
-                twist.angular.z = self.k_p*diff_p + self.k_i*self.diff_i_a
+                self.diff_p_A_rot = (320*self.resi_per-self.BlueCenter_X) / (320*self.resi_per)
+                self.diff_i_A_rot += self.diff_p_A_rot
+                if fabs(self.diff_p_A_rot) *(320*self.resi_per) < 5
+                    self.diff_i_A_rot = 0
+                twist.angular.z = self.k_p_A_rot*self.diff_p_A_rot + self.k_i_A_rot*self.diff_i_A_rot
+                self.diff_p_A_adv = (4000*self.resi_per*self.resi_per-self.BlueSize) / (4000*self.resi_per*self.resi_per)
+                self.diff_i_A_adv += self.diff_p_A_adv
+                if self.diff_p_A_adv < 0
+                    self.diff_i_A_adv = 0
+                twist.linear.x = self.k_p_A_adv*self.diff_p_A_adv + self.k_i_A_adv*self.diff_i_A_adv
                 self.vel_pub.publish(twist)
-            
+                
             #GreenマーカへのVF VF of B
             if self.VF_change_Flag == 2:
-                twist.linear.x = 0.1
-                diff_p = (320*self.resi_per-self.GreenCenter_X) / (320*self.resi_per)
-                if self.diff_i_b < 100000:
-                    self.diff_i_b += diff_p
-                twist.angular.z = self.k_p*diff_p + self.k_i*self.diff_i_b 
+                self.diff_p_B_rot = (320*self.resi_per-self.GreenCenter_X) / (320*self.resi_per)
+                self.diff_i_B_rot += self.diff_p_B_rot
+                if fabs(self.diff_p_B_rot) *(320*self.resi_per) < 5
+                    self.diff_i_B_rot = 0
+                twist.angular.z = self.k_p_A_rot*self.diff_p_B_rot + self.k_i_A_rot*self.diff_i_B_rot
+                self.diff_p_B_adv = (4000*self.resi_per*self.resi_per-self.BlueSize) / (4000*self.resi_per*self.resi_per)
+                self.diff_i_B_adv += self.diff_p_B_adv
+                if self.diff_p_B_adv < 0
+                    self.diff_i_B_adv = 0
+                twist.linear.x = self.k_p_A_adv*self.diff_p_B_adv + self.k_i_A_adv*self.diff_i_B_adv
+                if fabs(self.diff_p_B_rot) > 0.5
+                    twist.linear.x = 0.0
                 self.vel_pub.publish(twist)
 
             # 敵が近いときのVF VF of C
             if self.VF_change_Flag == 3:
                 if self.cam_AR_size>(4000*self.resi_per*self.resi_per) or self.GreenSize>(45000*self.resi_per*self.resi_per): #近すぎるから離れよう
-                    twist.linear.x = -0.1
+                    twist.linear.x = -1.0
                 else :
                     twist.linear.x = 0.0
                 if self.AR_ID > 0:#相手に背を向けないように動こう
-                    twist.angular.z = self.AngleEnemy_AR*0.15/(180*3.141592/180)
+                    twist.angular.z = self.AngleEnemy_AR*1.0/(180*3.141592/180)
                 elif self.AR_ID == 0:
                     twist.angular.z = 0.0
                 self.vel_pub.publish(twist)
