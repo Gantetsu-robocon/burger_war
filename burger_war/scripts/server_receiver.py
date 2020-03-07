@@ -78,9 +78,10 @@ class ServerReceiver(object):
             q = tf.transformations.quaternion_from_euler(0,0,np.pi)
             self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
-
+        #Initialize other variables
         self.passed_time = 0
         self.color_flag = [0,0,0,0,0,0]
+        self.succeeded_goal = False
 
         #Publisher
         self.enemy_pose_pub = rospy.Publisher("send_enemy_pose", PoseStamped, queue_size=1)
@@ -93,6 +94,7 @@ class ServerReceiver(object):
         self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
         self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
         self.color_flag_sub = rospy.Subscriber('color_flag_time',Int16MultiArray, self.colorCallback)
+        self.goal_succeeded = rospy.Subscriber("pathplan_succeeded",String,self.goal_callback)
 
     #Update target information
     def target_pose_update(self):
@@ -157,7 +159,7 @@ class ServerReceiver(object):
                 self.target_states[target_name]["distance"] = 99
             #他の的は距離を算出
             else:
-                self.target_states[target_name]["distance"] = self.pose_target_distance(target_name, self.my_pose)
+                self.target_states[target_name]["distance"] = self.target_distance(target_name)
     
     def target_priority_update(self):
         for target_name in self.target_states:
@@ -217,6 +219,10 @@ class ServerReceiver(object):
     def colorCallback(self, array):
         self.color_flag = array.data
 
+    def goal_callback(self, string):
+        if string.data == "succeeded":
+            self.succeeded_goal = True
+
     #Get target
     def top_priority_target(self):
         top_pri_name = "Tomato_N"
@@ -242,14 +248,14 @@ class ServerReceiver(object):
         return highest_name
 
     #Calculate distance
-    def pose_target_distance(self, target_name, PoseStamped):
-        diff_x = self.target_states[target_name]["pose"][0]-PoseStamped.pose.position.x
-        diff_y = self.target_states[target_name]["pose"][1]-PoseStamped.pose.position.y
+    def target_distance(self, target_name):
+        diff_x = self.target_states[target_name]["pose"][0]-self.my_pose.pose.position.x
+        diff_y = self.target_states[target_name]["pose"][1]-self.my_pose.pose.position.y
         return np.sqrt(diff_x**2+diff_y**2)
 
-    def pose_pose_distance(self,PoseStamped_1,PoseStamped_2):
-        diff_x = PoseStamped_2.pose.position.x - PoseStamped_1.pose.position.x
-        diff_y = PoseStamped_2.pose.position.y - PoseStamped_1.pose.position.y
+    def enemy_distance(self):
+        diff_x = self.enemy_pose.pose.position.x - self.my_pose.pose.position.x
+        diff_y = self.enemy_pose.pose.position.y - self.my_pose.pose.position.y
         return np.sqrt(diff_x**2+diff_y**2)
 
     #Debug method
