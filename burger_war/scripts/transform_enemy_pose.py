@@ -40,7 +40,7 @@ class TransformEnemy():
     def tf_enemy_pose(self):
         t = TransformStamped()
         t.header.stamp = rospy.Time.now()
-        t.header.frame_id = 'base_link'
+        t.header.frame_id = 'base_footprint'
         t.child_frame_id = 'enemy_pos'
         t.transform.translation = self.enemy_ps.pose.position
         t.transform.rotation = self.enemy_ps.pose.orientation
