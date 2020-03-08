@@ -17,6 +17,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
+import math
 import tf
 import numpy as np
 from aruco_msgs.msg import MarkerArray
@@ -72,6 +73,7 @@ class EnemyBot(object):
         self.Green_Size_h = 0
         self.GreenSize = 0.0
         self.Green_x = 0.0
+        self.GreenNum = 0.0
         # 青マーカ
         self.BlueCenter_X = 0
         self.BlueCenter_Y = 0
@@ -129,7 +131,7 @@ class EnemyBot(object):
             if self.VF_change_Flag == 1:
                 self.diff_p_A_rot = (320*self.resi_per-self.BlueCenter_X) / (320*self.resi_per)
                 self.diff_i_A_rot += self.diff_p_A_rot
-                if fabs(self.diff_p_A_rot) *(320*self.resi_per) < 5:
+                if math.fabs(self.diff_p_A_rot) *(320*self.resi_per) < 5:
                     self.diff_i_A_rot = 0
                 twist.angular.z = self.k_p_A_rot*self.diff_p_A_rot + self.k_i_A_rot*self.diff_i_A_rot
                 self.diff_p_A_adv = (4000*self.resi_per*self.resi_per-self.BlueSize) / (4000*self.resi_per*self.resi_per)
@@ -143,7 +145,7 @@ class EnemyBot(object):
             if self.VF_change_Flag == 2:
                 self.diff_p_B_rot = (320*self.resi_per-self.GreenCenter_X) / (320*self.resi_per)
                 self.diff_i_B_rot += self.diff_p_B_rot
-                if fabs(self.diff_p_B_rot) *(320*self.resi_per) < 5:
+                if math.fabs(self.diff_p_B_rot) *(320*self.resi_per) < 5:
                     self.diff_i_B_rot = 0
                 twist.angular.z = self.k_p_A_rot*self.diff_p_B_rot + self.k_i_A_rot*self.diff_i_B_rot
                 self.diff_p_B_adv = (4000*self.resi_per*self.resi_per-self.BlueSize) / (4000*self.resi_per*self.resi_per)
@@ -151,7 +153,7 @@ class EnemyBot(object):
                 if self.diff_p_B_adv < 0:
                     self.diff_i_B_adv = 0
                 twist.linear.x = self.k_p_A_adv*self.diff_p_B_adv + self.k_i_A_adv*self.diff_i_B_adv
-                if fabs(self.diff_p_B_rot) > 0.5:
+                if math.fabs(self.diff_p_B_rot) > 0.5:
                     twist.linear.x = 0.0
                 self.vel_pub.publish(twist)
 
@@ -277,10 +279,14 @@ class EnemyBot(object):
         size_max_h = 0
         center_max_x = 0
         center_max_y = 0
+        self.GreenNum = 0
 
         for i in range(1, nLabels):
             x, y, w, h, size = data[i]
             center_x, center_y = center[i]
+            if size > 100*self.resi_per*self.resi_per:
+                self.GreenNum += 1
+
             if size > size_max:
                 size_max_x = x
                 size_max_y = y
@@ -376,14 +382,14 @@ class EnemyBot(object):
     #ARマーカのカメラ座標上での位置を取得
     def ARPointSearch(self):
         if self.real_target_id == 0:
-            return (0,0,0,0,0)
+            return (0,0,0,0)
             #
         aruco = cv2.aruco
         dictionary = aruco.getPredefinedDictionary(aruco.DICT_ARUCO_ORIGINAL)
         corners, ids, rejectedImgPoints = aruco.detectMarkers(self.img, dictionary)
         #aruco.drawDetectedMarkers(self.img, corners, ids, (0,255,0))        
         if not corners:
-            return (0,0,0,0,0)
+            return (0,0,0,0)
 
         ARsize_max = 0
         ARcenter_max_x = 0
@@ -401,25 +407,75 @@ class EnemyBot(object):
         enemy_angle = 0.0
         green_size = 0.0
         cv2.putText(self.img,str(now_ID),(70,100),cv2.FONT_HERSHEY_SIMPLEX, 3.0,(0, 0, 0),5)
+        self.real_target_id = 0       
+        
+        return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID)
+
+    def EnemyAngle(self):
         # 敵の向きを推定
-        if now_ID == 50 or now_ID == 51 or now_ID == 52:
-            green_w_center_x , green_center_y ,green_wx , green_wy , green_size , green_x = self.GreenColor()          
-            PM_Flag = green_w_center_x - ARcenter_max_x
+        enemy_angle =0.0
+        green_w_center_x , green_center_y ,green_wx , green_wy , green_size , green_x = self.GreenColor()
+        if green_size==0:
+            return(0.0)
+        ttemp_theta = float(green_wx) / float(green_wy)
+        temp_theta = -2.0964*ttemp_theta*ttemp_theta + 1.4861*ttemp_theta + 0.6648
+        if ttemp_theta<0.5:
+            temp_theta = -0.8613*ttemp_theta + 1.3752
+        if self.cam_Point_size > 0 and self.GreenSize > 0:
+            diffRG = self.cam_Point_x- self.GreenCenter_X
+            if self.GreenNum == 1:
+                if ttemp_theta > 0.95 and math.fabs(diffRG)<10.0:
+                    if diffRG > 0:
+                        enemy_angle = 180*3.141592/180 + temp_theta 
+                        enemy_angle = enemy_angle - 360*3.141592/180
+                    else:
+                        enemy_angle = 180*3.141592/180 - temp_theta    
+                else:
+                    if ttemp_theta < 0.77:
+                        if diffRG<0:
+                            enemy_angle = 90*3.141592/180 - temp_theta
+                        else:
+                            
+                            enemy_angle = 270*3.141592/180 + temp_theta 
+                            enemy_angle = enemy_angle - 360*3.141592/180                   
+                    else:
+                        if diffRG>0:
+                            enemy_angle = 90*3.141592/180 - temp_theta
+                        else:
+                            
+                            enemy_angle = 270*3.141592/180 + temp_theta 
+                            enemy_angle = enemy_angle - 360*3.141592/180
+            elif self.GreenNum == 2:
+                if math.fabs(diffRG)<10.0:
+                    if diffRG > 0:
+                        enemy_angle = 180*3.141592/180 + temp_theta 
+                        enemy_angle = enemy_angle - 360*3.141592/180
+                    else:
+                        enemy_angle = 180*3.141592/180 - temp_theta
+                else:
+                    if diffRG > 0:
+                        enemy_angle = 90*3.141592/180 + temp_theta                    
+                    else:
+                        enemy_angle = 270*3.141592/180 - temp_theta 
+                        enemy_angle = enemy_angle - 360*3.141592/180
+
+        if self.AR_ID == 50 or self.AR_ID == 51 or self.AR_ID == 52:
+            PM_Flag = green_w_center_x - self.cam_AR_x
             if PM_Flag<-10*self.resi_per:
-                green_wx = (ARcenter_max_x - green_x)*2
+                green_wx = (self.cam_AR_x - green_x)*2
             elif PM_Flag>10*self.resi_per:
-                green_wx = (green_x + green_wx - ARcenter_max_x)*2
+                green_wx = (green_x + green_wx - self.cam_AR_x)*2
 
             ttemp_theta = 0.0
             ttemp_theta = float(green_wx) / float(green_wy)
             temp_theta = -2.0964*ttemp_theta*ttemp_theta + 1.4861*ttemp_theta + 0.6648
 
-            if now_ID == 50:
+            if self.AR_ID == 50:
                 if PM_Flag > 0:
                     enemy_angle = 90*3.141592/180 + temp_theta 
                 else:
                     enemy_angle = 90*3.141592/180 - temp_theta 
-            elif now_ID == 51:
+            elif self.AR_ID == 51:
                 if PM_Flag > 0:
                     enemy_angle = 270*3.141592/180 + temp_theta 
                     enemy_angle = enemy_angle - 360*3.141592/180
@@ -427,14 +483,14 @@ class EnemyBot(object):
                     enemy_angle = 270*3.141592/180 - temp_theta 
                     enemy_angle = enemy_angle - 360*3.141592/180
 
-            elif now_ID == 52:
+            elif self.AR_ID == 52:
                 if PM_Flag > 0:
                     enemy_angle = 180*3.141592/180 + temp_theta 
                     enemy_angle = enemy_angle - 360*3.141592/180
                 else:
-                    enemy_angle = 180*3.141592/180 - temp_theta                 
-        self.real_target_id = 0
-        return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID,enemy_angle)
+                    enemy_angle = 180*3.141592/180 - temp_theta    
+        return(enemy_angle)
+
 
     def VFFlagCallback(self, data):
         self.VF_change_Flag = data.data
@@ -447,14 +503,17 @@ class EnemyBot(object):
             rospy.logerr(e)
 
         self.cam_Point_x , self.cam_Point_y , self.cam_Point_size , self.Red_Size_w , self.Red_Size_h = self.ColorCenter()
-        self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID , self.AngleEnemy_AR= self.ARPointSearch()
+        self.cam_AR_x , self.cam_AR_y , self.cam_AR_size , self.AR_ID= self.ARPointSearch()
         self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_w , self.Green_Size_h , self.GreenSize , self.Green_x = self.GreenColor()
         self.BlueCenter_X , self.BlueCenter_Y , self.Blue_Size_w , self.Blue_Size_h , self.BlueSize = self.BlueColor()
         self.Relative_Pose_x , self.Relative_Pose_y = self.GetRelativePose()
-        #print('AngleEnemy_AR' , self.AngleEnemy_AR*180/3.141592)
+        self.AngleEnemy_AR = self.EnemyAngle()
+        #print('AngleEnemy_AR' , self.AngleEnemy_AR*180/3.141592,float(self.Green_Size_w)/float(self.Green_Size_h),self.cam_Point_x- self.GreenCenter_X)
+        #print(float(self.Green_Size_w)/float(self.Green_Size_h))
+
         #print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
         #print('(Green x,y,h)=' , self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_h)
-        print('()=' , self.Red_Size_w )
+        #print('()=' , float(self.Green_Size_w)/float(self.Green_Size_h),self.cam_Point_x- self.GreenCenter_X,self.GreenNum,float(self.GreenSize)/float(self.cam_Point_size))
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
 
