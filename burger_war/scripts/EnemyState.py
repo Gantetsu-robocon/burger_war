@@ -437,7 +437,7 @@ class EnemyBot(object):
         return (ARcenter_max_x,ARcenter_max_y,ARsize_max,now_ID,enemy_angle)
 
     def VFFlagCallback(self, data):
-        self.VF_change_Flag = data
+        self.VF_change_Flag = data.data
 
     def imageCallback(self, data):
         try:
