@@ -65,7 +65,7 @@ class TransformEnemy():
         t = TransformStamped()
         t.header.stamp = rospy.Time.now()
         t.header.frame_id = 'base_footprint'
-        t.child_frame_id = 'enemy_rel_camera'
+        t.child_frame_id = 'enemy_camera_rel'
         t.transform.translation = self.enemy_ps.pose.position
         t.transform.rotation = self.enemy_ps.pose.orientation
         self.tf_broadcaster.sendTransform(t)
@@ -73,16 +73,16 @@ class TransformEnemy():
     #Broadcast absolute enmey from camera
     def tf_abs_camera(self):
         try:
-            t = self.tfBuffer.lookup_transform('map', 'enemy_rel_camera', rospy.Time(0), rospy.Duration(1.0))
+            t = self.tfBuffer.lookup_transform('map', 'enemy_camera_rel', rospy.Time(0), rospy.Duration(1.0))
             t.header.frame_id = 'map'
-            t.child_frame_id = 'enemy_abs_camera'
+            t.child_frame_id = 'enemy_camera_abs'
             self.tf_broadcaster.sendTransform(t)
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             pass
 
     def main(self):
         while not rospy.is_shutdown():
-            pass
+            rospy.spin()
         
 if __name__ == '__main__':
     rospy.init_node('enemy_tf_broadcaster')

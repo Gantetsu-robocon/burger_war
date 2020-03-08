@@ -7,7 +7,8 @@ import tf
 import roslib.packages
 from obstacle_detector.msg import Obstacles
 from std_msgs.msg          import Float32
-from geometry_msgs.msg import PoseStamped 
+from geometry_msgs.msg     import PoseStamped
+from std_msgs.msg         import Bool 
 
 class EnemyDetector:
     def __init__(self):
@@ -17,6 +18,11 @@ class EnemyDetector:
         self.sub_obstacles   = rospy.Subscriber('obstacles', Obstacles, self.obstacles_callback)
         self.pub_robot2enemy = rospy.Publisher('robot2enemy', Float32, queue_size=10)
         self.robot_name      = rospy.get_param('~robot_name', '')
+
+        self.pub_flag = rospy.Publisher('lidar_flag', Bool, queue_size=10)
+
+        self.flag = False
+
 
     def obstacles_callback(self, msg):
 
@@ -36,8 +42,7 @@ class EnemyDetector:
             #敵の座標をTFでbroadcast
             enemy_frame_name = self.robot_name + '/enemy_' + str(num)
             map_frame_name   = self.robot_name + "/map"
-            footprint_frame_name = self.robot_name + "/base_footprint"
-            self.tf_broadcaster.sendTransform((temp_x,temp_y,0), (0,0,0,1), rospy.Time.now(), enemy_frame_name, footprint_frame_name)
+            self.tf_broadcaster.sendTransform((temp_x,temp_y,0), (0,0,0,1), rospy.Time.now(), enemy_frame_name, map_frame_name)
 
             #ロボットから敵までの距離を計算
             try:
@@ -56,6 +61,7 @@ class EnemyDetector:
 
         #敵を検出している場合、その座標と距離を出力
         if closest_enemy_len < sys.float_info.max:
+            self.flag = True
 
             map_frame_name   = self.robot_name + "/map"
             enemy_frame_name = self.robot_name + "/enemy_lidar"
@@ -63,6 +69,10 @@ class EnemyDetector:
 
             #ロボットから敵までの距離をpublish
             self.pub_robot2enemy.publish(closest_enemy_len)
+        else:
+            self.flag = False
+
+        self.pub_flag.publish(self.flag)
 
     def is_point_emnemy(self, point_x, point_y):
         #フィールド内の物体でない、敵と判定する閾値（半径）
