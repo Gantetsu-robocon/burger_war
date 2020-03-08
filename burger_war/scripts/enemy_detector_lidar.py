@@ -12,6 +12,10 @@ from std_msgs.msg         import Bool
 
 class EnemyDetector:
     def __init__(self):
+        #フィールド内の物体でない、敵と判定する閾値（半径）
+        self.thresh_corner = rospy.get_param("~th_corner", 0.20)
+        self.thresh_center = rospy.get_param("~th_center", 0.32)
+
         #self.map_data#このクラスが持つ「num」変数に引数を格納
         self.tf_broadcaster  = tf.TransformBroadcaster()
         self.tf_listener     = tf.TransformListener()
@@ -75,10 +79,6 @@ class EnemyDetector:
         self.pub_flag.publish(self.flag)
 
     def is_point_emnemy(self, point_x, point_y):
-        #フィールド内の物体でない、敵と判定する閾値（半径）
-        thresh_corner = 0.20
-        thresh_center = 0.32
-
         #フィールド内かチェック
         if   point_y > (-point_x + 1.55):
             return False
@@ -96,7 +96,7 @@ class EnemyDetector:
         len_p4 = math.sqrt(pow((point_x + 0.53), 2) + pow((point_y + 0.53), 2))
         len_p5 = math.sqrt(pow(point_x         , 2) + pow(point_y         , 2))
 
-        if len_p1 < thresh_corner or len_p2 < thresh_corner or len_p3 < thresh_corner or len_p4 < thresh_corner or len_p5 < thresh_center:
+        if len_p1 < self.thresh_corner or len_p2 < self.thresh_corner or len_p3 < self.thresh_corner or len_p4 < self.thresh_corner or len_p5 < self.thresh_center:
             return False
         else:
             return True

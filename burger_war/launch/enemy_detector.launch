@@ -5,6 +5,8 @@
 
   <node pkg="burger_war" type="enemy_detector_lidar.py" name="enemy_detector_node" output="screen">
       <param name="robot_name" value="$(arg robot_name)" />
+      <param name="th_corner" value="0.20"/>
+      <param name="th_center" value="0.32"/>
   </node>
 
   <include file="$(find burger_war)/launch/obstacle_detector.launch">
