@@ -31,6 +31,7 @@ class ServerReceiver(object):
         self.focus_dist = rospy.get_param("~focous_dist",0.20) 
         self.ignore_enemy = rospy.get_param("~ignore_enemy",False)
         current_dir = rospy.get_param("~current_dir","/home/koki/catkin_ws/src/burger_war/burger_war/scripts")
+
         #Initialize target position
         with open(current_dir+'/marker_pose.json') as f:
             self.target_states = json.load(f)

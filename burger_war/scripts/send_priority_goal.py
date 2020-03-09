@@ -19,7 +19,8 @@ from geometry_msgs.msg import PoseStamped, Quaternion, Point, Twist, Pose
 from std_msgs.msg import String, Int16MultiArray, Int8
 
 #Import ROS service type
-from burger_war.srv import DesiredPose, SimpleFlag, VisualFeedbackFlag
+from burger_war.srv import DesiredPose, VisualFeedbackFlag
+from std_srvs.srv import Empty,EmptyResponse
 
 #分割
 import def_state
@@ -38,7 +39,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                             auto_transitions=False, ordered_transitions=False,
                             title="", show_auto_transitions=False, show_conditions=False)
 
-        #Get prameter
+        #Get parameter
         self.enemy_distance_th = rospy.get_param("~enemy_distance_th",0.50)
         self.time_th = rospy.get_param("~time_th", 0)
         self.control_cycle = rospy.get_param("~control_cycle", 5.0)
@@ -46,10 +47,20 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         self.near_dist_th = rospy.get_param("~near_dist_th",0.8)
         self.use_global_planner = rospy.get_param("~use_global_planner",False)
         
-        #Publisher
-        self.desired_goal_pub = rospy.Publisher("desired_pose", PoseStamped, queue_size=1)
-        self.cancel_goal_pub = rospy.Publisher("reset_pathplan", String, queue_size=1)
-        self.vf_flag_pub = rospy.Publisher("vf_flag", Int8, queue_size=1)
+        #Service Clint
+        rospy.wait_for_service("desired_pose")
+        self.desired_pose_call = rospy.ServiceProxy("desired_pose",DesiredPose)
+        rospy.wait_for_service("reset_pathplan")
+        self.cancel_goal_call = rospy.ServiceProxy("reset_pathplan", Empty)
+        rospy.wait_for_service("vf_flag")
+        self.vf_flag_call = rospy.ServiceProxy("vf_flag", VisualFeedbackFlag) 
+
+        #Service Server
+        self.path_success_srv = rospy.Service("pathplan_succeeded",Empty, self.successCallback)
+
+    def successCallback(self,req):
+        self.goal_reaced = True
+        return EmptyResponse()
 
     def send_goal(self,target_name):
         goal = PoseStamped()
@@ -70,12 +81,12 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
             print ""
             print "vf A starts"
             print ""
-            self.vf_flag_pub.publish(data=1)
+            self.vf_flag_call(Int8(data=1))
             while (now_t - init_t)< self.control_cycle:
                 if self.color_flag[4]:
                     break
                 now_t = rospy.Time.now().to_sec()
-            self.vf_flag_pub.publish(data=0)
+            self.vf_flag_call(Int8(data=0))
         #if self.color_flag[2] and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R" \
         #    or target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
         elif self.color_flag[2] and self.enemy_distance() < self.focus_dist*5:
@@ -83,26 +94,28 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
             print ""
             print "vf B starts"
             print ""
-            self.vf_flag_pub.publish(Int8(data=2))
+            self.vf_flag_call(Int8(data=2))
             while (now_t - init_t) < self.control_cycle:
                 if self.color_flag[3]:
                     break
                 now_t = rospy.Time.now().to_sec()
-            self.vf_flag_pub.publish(Int8(data=0))
+            self.vf_flag_call(Int8(data=0))
         else:
             print ""
             print "move base"
             print ""
             #ゴールをGlobal Plannerに送る
-            self.desired_goal_pub.publish(goal)
+            self.desired_pose_call(goal)
             while (now_t - init_t) < self.control_cycle:
                 now_t = rospy.Time.now().to_sec()
                 #if self.succeeded_goal:
                     #break
                 if self.enemy_distance() < self.enemy_distance_th: 
-                    self.cancel_goal_pub.publish("Stop")
+                    self.cancel_goal_call()
                     break
-            self.succeeded_goal = False
+                if self.goal_reaced:
+                    break
+            self.goal_reaced = False
 
     def main(self):
         while not rospy.is_shutdown():
@@ -142,9 +155,9 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 now_t = init_t
                 while (now_t - init_t) < self.control_cycle:
                     #TODO 回避動作の定義
-                    self.vf_flag_pub.publish(Int8(data=3)) #vf C start
+                    self.vf_flag_call(Int8(data=3)) #vf C start
                     now_t = rospy.Time.now().to_sec()
-                self.vf_flag_pub.publish(Int8(data = 0)) #vf stop
+                self.vf_flag_call(Int8(data = 0)) #vf stop
                 self.state.trigger('cycle')
 
             #近い的の探索
