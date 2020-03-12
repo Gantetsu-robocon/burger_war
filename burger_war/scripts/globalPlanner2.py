@@ -312,14 +312,7 @@ class main():
             # state = self.ac.get_state()
 
             if succeeded and self.index == len(path)-1:
-                q = tf.transformations.quaternion_from_euler(0, 0, pose[2]+0.2)
-                self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
-                self.ac.send_goal(self.goal)
-                self.ac.wait_for_result(rospy.Duration(2))
-                q = tf.transformations.quaternion_from_euler(0, 0, pose[2]-0.2)
-                self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
-                self.ac.send_goal(self.goal)
-                self.ac.wait_for_result(rospy.Duration(2))
+                self.furifuri(pose)
                 self.succeeded_pub.publish('succeeded')
             if not succeeded:
                 self.ac.cancel_all_goals()
@@ -334,6 +327,16 @@ class main():
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
         self.index = 10
+
+    def furifuri(self, pose):
+        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]+0.3)
+        self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
+        self.ac.send_goal(self.goal)
+        self.ac.wait_for_result(rospy.Duration(2))
+        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]-0.3)
+        self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
+        self.ac.send_goal(self.goal)
+        self.ac.wait_for_result(rospy.Duration(2))
 
 
 if __name__ == '__main__':
