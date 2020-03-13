@@ -11,6 +11,7 @@ import os
 import actionlib
 import copy
 from transitions.extensions import GraphMachine
+import time
 
 #Import ROS topic type
 from nav_msgs.msg import Odometry
@@ -108,7 +109,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
 
         return pre_state
 
-    def main_break(self):
+    def main(self):
         pre_state = ""
         while not rospy.is_shutdown():
             self.target_priority_update()
@@ -149,6 +150,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                     self.stop_sending()
                     target, _ = self.top_priority_target()
                     self.send_goal(target)
+                    time.sleep(0.5)
                     pre_state = "get_highest_marker"
                 
                 if self.goal_reached:
@@ -164,6 +166,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                     self.stop_sending()
                     target, _ = self.nearest_target()
                     self.send_goal(target)
+                    time.sleep(0.5)
                     pre_state = "get_nearest_marker"
                 
                 if self.goal_reached:
@@ -178,4 +181,4 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
 if __name__ == '__main__':
     rospy.init_node('send_priority_goal')
     send = SendPriorityGoal()
-    send.main_break()
+    send.main()

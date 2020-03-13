@@ -24,12 +24,8 @@ class ServerReceiver(object):
     def __init__(self):
         #Get parameter
         self.side = rospy.get_param("~side", "r")
-        if self.side == "r":
-            self.enemy_side = "b"
-        else:
-            self.enemy_side = "r"
+        self.enemy_side = "b" if self.side =="r" else "r"
         self.focus_dist = rospy.get_param("~focous_dist",0.20) 
-        self.ignore_enemy = rospy.get_param("~ignore_enemy",False)
         current_dir = rospy.get_param("~current_dir","/home/koki/catkin_ws/src/burger_war/burger_war/scripts")
 
         #Initialize target position
@@ -41,9 +37,6 @@ class ServerReceiver(object):
         self.target_states["OctopusWiener_S"]["pose"][0] -= self.focus_dist
         self.target_states["FriedShrimp_N"]["pose"][0] += self.focus_dist
         self.target_states["FriedShrimp_S"]["pose"][0] -= self.focus_dist
-
-        if self.ignore_enemy:
-            del self.target_states["RE_B"],self.target_states["RE_R"],self.target_states["RE_L"] ,self.target_states["BL_B"],self.target_states["BL_R"],self.target_states["BL_L"]
 
         #Copy previous target state
         self.target_states_pre = copy.deepcopy(self.target_states)
@@ -115,33 +108,56 @@ class ServerReceiver(object):
         th_m = e_m[2]
         pose_m = self.my_pose.pose.position
         self.diff_theta = th_e - th_m
-        if not self.ignore_enemy:
-            if self.side == "r":
-                self.target_states["BL_L"]["pose"] = [pose_e.x-(0.07)*np.sin(th_e),
-                    pose_e.y+(0.07)*np.cos(th_e), th_e-np.pi/2]
-                    #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
-                    #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
-                self.target_states["BL_R"]["pose"] = [pose_e.x+(0.07)*np.sin(th_e),
-                    pose_e.y-(0.07)*np.cos(th_e), th_e+np.pi/2]
-                    #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
-                    #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
-                self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1)*np.cos(th_e),
-                    pose_e.y-(0.1)*np.sin(th_e), th_e]
-                    #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
-                    #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
-            elif self.side == "b":
-                    self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07)*np.sin(th_e),
-                    pose_e.y+(0.07)*np.cos(th_e), th_e-np.pi/2]
-                    #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
-                    #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
-                    self.target_states["RE_R"]["pose"] = [pose_e.x+(0.07)*np.sin(th_e),
-                        pose_e.y-(0.07)*np.cos(th_e), th_e+np.pi/2]
-                    #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
-                    #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
-                    self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1)*np.cos(th_e),
-                        pose_e.y-(0.1)*np.sin(th_e), th_e]
-                    #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
-                    #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
+        if self.side == "r":
+            self.target_states["BL_L"]["pose"] = [pose_e.x-(0.07)*np.sin(th_e),
+                pose_e.y+(0.07)*np.cos(th_e), th_e-np.pi/2]
+                #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
+                #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
+            self.target_states["BL_R"]["pose"] = [pose_e.x+(0.07)*np.sin(th_e),
+                pose_e.y-(0.07)*np.cos(th_e), th_e+np.pi/2]
+                #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
+                #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
+            self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1)*np.cos(th_e),
+                pose_e.y-(0.1)*np.sin(th_e), th_e]
+                #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
+                #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
+            self.target_states["RE_L"]["pose"] = [pose_m.x-(0.07)*np.sin(th_m),
+                pose_m.y+(0.07)*np.cos(th_m), th_m-np.pi/2]
+            #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
+            #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
+            self.target_states["RE_R"]["pose"] = [pose_m.x+(0.07)*np.sin(th_m),
+                pose_m.y-(0.07)*np.cos(th_m), th_m+np.pi/2]
+            #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
+            #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
+            self.target_states["RE_B"]["pose"] = [pose_m.x-(0.1)*np.cos(th_m),
+                pose_m.y-(0.1)*np.sin(th_m), th_m]
+            #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
+            #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
+        elif self.side == "b":
+            self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07)*np.sin(th_e),
+                pose_e.y+(0.07)*np.cos(th_e), th_e-np.pi/2]
+            #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
+            #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
+            self.target_states["RE_R"]["pose"] = [pose_e.x+(0.07)*np.sin(th_e),
+                pose_e.y-(0.07)*np.cos(th_e), th_e+np.pi/2]
+            #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
+            #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
+            self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1)*np.cos(th_e),
+                pose_e.y-(0.1)*np.sin(th_e), th_e]
+            #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
+            #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
+            self.target_states["BL_L"]["pose"] = [pose_m.x-(0.07)*np.sin(th_m),
+                pose_m.y+(0.07)*np.cos(th_m), th_m-np.pi/2]
+                #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
+                #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
+            self.target_states["BL_R"]["pose"] = [pose_m.x+(0.07)*np.sin(th_m),
+                pose_m.y-(0.07)*np.cos(th_m), th_m+np.pi/2]
+                #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
+                #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
+            self.target_states["BL_B"]["pose"] = [pose_m.x-(0.1)*np.cos(th_m),
+                pose_m.y-(0.1)*np.sin(th_m), th_m]
+                #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
+                #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
 
     def target_player_update(self,target_data):
         for info in target_data:
@@ -180,8 +196,8 @@ class ServerReceiver(object):
                 else:
                     point = float(self.target_states[target_name]["point"])
                 dist = float(self.target_states[target_name]["distance"])
-                #TODO 優先度の算出
-                self.target_states[target_name]["priority"] = -dist #+point
+                #優先度
+                self.target_states[target_name]["priority"] = point
 
     # 相手が最後にとった的を保存
     def last_enemy_target(self):
