@@ -14,6 +14,8 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
+from std_srvs.srv import Empty
+# from burger_war.srv import DesiredPose
 
 class Node:
     def __init__(self, num, parent, cost, heuristic):
@@ -261,11 +263,16 @@ class main():
         self.ac.wait_for_server()
 
         # Subscriber
-        self.desired_pose_sub = rospy.Subscriber('desired_pose', PoseStamped, self.desiredPoseCallback)
         self.odom_sub = rospy.Subscriber('odom', Odometry, self.odomCallback)
-        self.reset_pathplan_sub = rospy.Subscriber('reset_pathplan', String, self.resetPathplanCallback)
+        
+        # When use service
+        # rospy.wait_for_service("pathplan_succeeded")
+        # self.desired_pose_srv = rospy.Service("desired_pose", DesiredPose, self.desiredPoseCallback)
+        # self.reset_pathplan_sub = rospy.Service('reset_pathplan', Empty, self.resetPathplanCallback)
 
-        # Publisher
+        # When use topic
+        self.desired_pose_sub = rospy.Subscriber('desired_pose', PoseStamped, self.desiredPoseCallback)
+        self.reset_pathplan_sub = rospy.Subscriber('reset_pathplan', String, self.resetPathplanCallback)
         self.succeeded_pub = rospy.Publisher('pathplan_succeeded', String, queue_size=1)
 
         self.desired_pose = PoseStamped()
@@ -314,6 +321,8 @@ class main():
             if succeeded and self.index == len(path)-1:
                 self.furifuri(pose)
                 self.succeeded_pub.publish('succeeded')
+                # service_call = rospy.ServiceProxy("pathplan_succeeded", Empty)
+                # service_call()
             if not succeeded:
                 self.ac.cancel_all_goals()
                 break
@@ -326,7 +335,7 @@ class main():
     
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
-        self.index = 10
+        self.index = 100
 
     def furifuri(self, pose):
         q = tf.transformations.quaternion_from_euler(0, 0, pose[2]+0.3)
