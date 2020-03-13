@@ -95,7 +95,6 @@ class ServerReceiver(object):
         self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
         self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
         self.color_flag_sub = rospy.Subscriber('color_flag_time',Int16MultiArray, self.colorCallback)
-        self.goal_succeeded = rospy.Subscriber("pathplan_succeeded",String,self.goal_callback)
 
     #Update target information
     def target_pose_update(self):
@@ -220,17 +219,13 @@ class ServerReceiver(object):
     def colorCallback(self, array):
         self.color_flag = array.data
 
-    def goal_callback(self, string):
-        if string.data == "succeeded":
-            self.succeeded_goal = True
-
     #Get target
     def top_priority_target(self):
         top_pri_name = "Tomato_N"
         for target_name in self.target_states:
             if self.target_states[target_name]["priority"] > self.target_states[top_pri_name]["priority"]:
                 top_pri_name = target_name
-        return top_pri_name
+        return top_pri_name, self.target_states[top_pri_name]["priority"]
 
     def nearest_target(self):
         target_list = [ d for d in self.target_states if not self.target_states[d].get("priority") == -99 ]
@@ -238,7 +233,7 @@ class ServerReceiver(object):
         for target_name in target_list:
             if self.target_states[target_name]["distance"] < self.target_states[nearest_name]["distance"]:
                 nearest_name = target_name
-        return nearest_name
+        return nearest_name, self.target_states[nearest_name]["distance"]
 
     def highest_target(self):
         target_list = [ d for d in self.target_states if not self.target_states[d].get("priority") == -99 ]
@@ -246,7 +241,7 @@ class ServerReceiver(object):
         for target_name in target_list:
             if self.target_states[target_name]["point"] > self.target_states[highest_name]["point"]:
                 highest_name = target_name
-        return highest_name
+        return highest_name, self.target_states[highest_name]["point"]
 
     #Calculate distance
     def target_distance(self, target_name):
