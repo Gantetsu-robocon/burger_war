@@ -31,13 +31,6 @@ from IPython.terminal.debugger import set_trace
 class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
     def __init__(self):
         super(SendPriorityGoal,self).__init__()
-        #State Machine
-        self.state = def_state.State()
-        self.machine = GraphMachine(model=self.state, states=self.state.states, initial='search_enemy_distance', 
-                            transitions=self.state.transitions,
-                            auto_transitions=False, ordered_transitions=False,
-                            title="", show_auto_transitions=False, show_conditions=False)
-
         #Get parameter
         self.enemy_distance_th = rospy.get_param("~enemy_distance_th",0.50)
         self.time_th = rospy.get_param("~time_th", 0)
@@ -74,128 +67,46 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         goal.pose.orientation.z = q[2]
         goal.pose.orientation.w = q[3]
 
-        init_t = rospy.Time.now().to_sec()
-        now_t = init_t
-        if self.color_flag[1] and self.target_distance(target_name) <self.vf_A_dist:
-            #vf Aスタート
-            print ""
-            print "vf A starts"
-            print ""
-            self.vf_flag_call(Int8(data=1))
-            while (now_t - init_t)< self.control_cycle:
-                if self.color_flag[4]:
-                    break
-                now_t = rospy.Time.now().to_sec()
-            self.vf_flag_call(Int8(data=0))
-        #if self.color_flag[2] and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R" \
-        #    or target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
-        elif self.color_flag[2] and self.enemy_distance() < self.vf_B_dist:
-            #vf Bスタート
-            print ""
-            print "vf B starts"
-            print ""
-            self.vf_flag_call(Int8(data=2))
-            while (now_t - init_t) < self.control_cycle:
-                if self.color_flag[3]:
-                    break
-                now_t = rospy.Time.now().to_sec()
-            self.vf_flag_call(Int8(data=0))
-        else:
-            print ""
-            print "move base"
-            print ""
-            #ゴールをGlobal Plannerに送る
-            self.desired_pose_call(goal)
-            while (now_t - init_t) < self.control_cycle:
-                now_t = rospy.Time.now().to_sec()
-                #if self.succeeded_goal:
-                    #break
-                if self.enemy_distance() < self.enemy_distance_th: 
-                    self.cancel_goal_call()
-                    break
-                if self.goal_reached:
-                    break
-            self.goal_reached = False
-
-    def send_goal_only(self,target_name):
-        goal = PoseStamped()
-        goal.header.frame_id = "map"
-        goal.pose.position.x = self.target_states[target_name]["pose"][0]
-        goal.pose.position.y = self.target_states[target_name]["pose"][1]
-
-        q = tf.transformations.quaternion_from_euler(0,0,self.target_states[target_name]["pose"][2])
-        goal.pose.orientation.x = q[0]
-        goal.pose.orientation.y = q[1]
-        goal.pose.orientation.z = q[2]
-        goal.pose.orientation.w = q[3]
-
         #ゴールをGlobal Plannerに送る
         self.desired_pose_call(goal)
 
-    def main(self):
-        while not rospy.is_shutdown():
-            self.target_priority_update()
-            #敵との距離を求める
-            if self.state.state == 'search_enemy_distance':
-                if self.enemy_distance() > self.enemy_distance_th:
-                    self.state.trigger('enemy_far')
-                else:
-                    self.state.trigger('enemy_near')
+    def stop_sending(self):
+        self.cancel_goal_call()
+        self.vf_flag_call(Int8(data=0))
 
-            #残り時間による場合分け
-            elif self.state.state == 'get_time_left':
-                if self.passed_time > self.time_th:
-                    self.state.trigger('time_over')
-                else:
-                    self.state.trigger('in_time')
-
-            #敵と向かいあっているかどうか、見えているかどうか
-            elif self.state.state == 'get_enemy_pose':
-                if self.color_flag[2] and (self.diff_theta < self.diff_theta_th):
-                    self.state.trigger('can_see_and_face')
-                else:
-                    self.state.trigger('cannot_see_or_face')
-
-            #退避
-            elif self.state.state == 'escape':
+    def vf(self,previous_state,target):
+        pre_state = previous_state
+        if self.color_flag[1] and self.target_distance(target) <self.vf_A_dist:
+            if not pre_state == "vf_A":
+                self.stop_sending()
+                #vf Aスタート
+                self.vf_flag_call(Int8(data=0))
                 print ""
-                print "vf C starts"
+                print "vf A starts"
                 print ""
-                init_t = rospy.Time.now().to_sec()
-                now_t = init_t
-                while (now_t - init_t) < self.control_cycle:
-                    #TODO 回避動作の定義
-                    self.vf_flag_call(Int8(data=3)) #vf C start
-                    now_t = rospy.Time.now().to_sec()
-                self.vf_flag_call(Int8(data = 0)) #vf stop
-                self.state.trigger('cycle')
+                self.vf_flag_call(Int8(data=1))
+                pre_state = "vf_A"
 
-            #近い的の探索
-            elif self.state.state == 'search_near_target':
-                _, nearest_dist = self.nearest_target()
-                if nearest_dist < self.near_close_th:
-                    self.state.trigger('near_target_exists')
-                else:
-                    self.state.trigger('near_target_absent')
-            
-            #最も近い的をゴールとする
-            elif self.state.state == 'get_nearest_target':
-                target,_ = self.nearest_target()
-                self.state.trigger('send_target')
+            if self.color_flag[4]:
+                self.vf_flag_call(Int8(data=0))
+                self.target_states[target]["priority"] = -99
 
-            #最も点数の高い的をゴールとする
-            elif self.state.state == 'get_highest_target':
-                target = self.highest_target()
-                self.state.trigger('send_target')
+        if self.color_flag[2] and self.enemy_distance() < self.vf_B_dist:
+            if not pre_state == "vf_B":
+                self.stop_sending()
+                #vf Bスタート
+                self.cancel_goal_call()
+                print ""
+                print "vf B starts"
+                print ""
+                self.vf_flag_call(Int8(data=2))
+                pre_state = "vf_B"
 
-            #ゴールの送信
-            elif self.state.state == 'go_to_target':
-                print "target_goal:",target
-                self.send_goal(target)
-                self.state.trigger('cycle')
+            if self.color_flag[3]:
+                self.vf_flag_call(Int8(data=0))
+                self.target_states[target]["priority"] = -99
 
-            print "self.state.state:",self.state.state
-            #self.show_pose()
+        return pre_state
 
     def main_break(self):
         pre_state = ""
@@ -225,6 +136,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
             if ene_is_near and ene_to_face and find_enemy: 
                 #回避
                 if not pre_state =="escape":
+                    self.stop_sending()
                     print ""
                     print "vf c starts"
                     print ""
@@ -234,8 +146,9 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
             elif ((ene_is_near and ene_not_face) or ene_is_far) and in_time and no_marker_close:
                 #最も点数の高い的を取りに行く
                 if not (pre_state =="get_highest_marker" and pre_state == "vf_A" and pre_state == "vf_B"):
+                    self.stop_sending()
                     target, _ = self.top_priority_target()
-                    self.send_goal_only(target)
+                    self.send_goal(target)
                     pre_state = "get_highest_marker"
                 
                 if self.goal_reached:
@@ -248,8 +161,9 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
             else:
                 #最も近い的を取りに行く
                 if not (pre_state =="get_nearest_marker" and pre_state == "vf_A" and pre_state == "vf_B"):
+                    self.stop_sending()
                     target, _ = self.nearest_target()
-                    self.send_goal_only(target)
+                    self.send_goal(target)
                     pre_state = "get_nearest_marker"
                 
                 if self.goal_reached:
@@ -258,39 +172,8 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                     pre_state = ""
                 #条件がそろえばvf
                 pre_state = self.vf(pre_state,target)
-
-
-    def vf(self,previous_state,target):
-        pre_state = previous_state
-        if self.color_flag[1] and self.target_distance(target) <self.vf_A_dist:
-            if not pre_state == "vf_A":
-                #vf Aスタート
-                self.cancel_goal_call()
-                print ""
-                print "vf A starts"
-                print ""
-                self.vf_flag_call(Int8(data=1))
-                pre_state = "vf_A"
-
-            if self.color_flag[4]:
-                self.vf_flag_call(Int8(data=0))
-                self.target_states[target]["priority"] = -99
-
-        if self.color_flag[2] and self.enemy_distance() < self.vf_B_dist:
-            if not pre_state == "vf_B":
-                #vf Bスタート
-                self.cancel_goal_call()
-                print ""
-                print "vf B starts"
-                print ""
-                self.vf_flag_call(Int8(data=2))
-                pre_state = "vf_B"
-
-            if self.color_flag[3]:
-                self.vf_flag_call(Int8(data=0))
-                self.target_states[target]["priority"] = -99
-
-        return pre_state
+        
+        print "【state】:",pre_state
 
 if __name__ == '__main__':
     rospy.init_node('send_priority_goal')
