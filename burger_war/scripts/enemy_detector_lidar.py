@@ -22,7 +22,7 @@ class EnemyDetector:
         self.sub_obstacles   = rospy.Subscriber('obstacles', Obstacles, self.obstacles_callback)
         self.pub_robot2enemy = rospy.Publisher('robot2enemy', Float32, queue_size=10)
         self.robot_name      = rospy.get_param('~robot_name', '')
-
+        
         self.pub_flag = rospy.Publisher('lidar_flag', Bool, queue_size=10)
 
         self.flag = False
