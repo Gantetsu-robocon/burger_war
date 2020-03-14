@@ -343,14 +343,15 @@ class main():
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
         self.index = 100
+        self.received_pose = False
         return EmptyResponse()
 
     def furifuri(self, pose):
-        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]+0.3)
+        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]+0.1)
         self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
         self.ac.send_goal(self.goal)
         self.ac.wait_for_result(rospy.Duration(2))
-        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]-0.3)
+        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]-0.1)
         self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
         self.ac.send_goal(self.goal)
         self.ac.wait_for_result(rospy.Duration(2))
@@ -358,6 +359,8 @@ class main():
 
 if __name__ == '__main__':
     main = main()
+    r = rospy.Rate(1)
     while not rospy.is_shutdown():
         if main.received_pose:
             main.sendDesiredPose()
+            r.sleep()

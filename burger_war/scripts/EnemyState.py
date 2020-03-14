@@ -32,7 +32,7 @@ class EnemyBot(object):
         self.rate = rospy.get_param("~rate", 5)
         self.resi_per = rospy.get_param("~resize_rate", 0.8)
 
-        self.k_p_A_rot = 0.5 #pゲイン
+        self.k_p_A_rot = 0.1 #pゲイン
         self.k_i_A_rot = 0.0 #iゲイン
         self.k_p_A_adv = 0.5 #pゲイン
         self.k_i_A_adv = 0.0 #iゲイン
