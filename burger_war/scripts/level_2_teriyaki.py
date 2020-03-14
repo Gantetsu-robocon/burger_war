@@ -80,14 +80,14 @@ class TeriyakiBurger():
         new_twist_ang_z = th_diff * self.k
         
         self.twist.angular.z = new_twist_ang_z
-        print(pose_x, pose_y, th, th_xy, new_twist_ang_z)
+        #print(pose_x, pose_y, th, th_xy, new_twist_ang_z)
 
 
     def calcTargetTheta(self, pose_x, pose_y):
         x = self.poseToindex(pose_x)
         y = self.poseToindex(pose_y)
         th = TARGET_TH[x][y]
-        print("POSE pose_x: {}, pose_y: {}. INDEX x:{}, y:{}".format(pose_x, pose_y, x, y))
+        #print("POSE pose_x: {}, pose_y: {}. INDEX x:{}, y:{}".format(pose_x, pose_y, x, y))
         return th
 
     def poseToindex(self, pose):

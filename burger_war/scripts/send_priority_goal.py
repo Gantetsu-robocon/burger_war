@@ -18,7 +18,7 @@ from transitions.extensions import GraphMachine
 import copy
 
 #for debug
-from IPython.terminal.debugger import set_trace
+#from IPython.terminal.debugger import set_trace
 
 class Matter(object):
     def __init__(self):

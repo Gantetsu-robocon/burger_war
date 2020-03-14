@@ -80,8 +80,8 @@ class EnemyDetector:
             enemy_direction = None
             enemy_dist = None
 
-        #print("Enemy: {}, Direction: {}".format(is_near_enemy, enemy_direction))
-        #print("enemy points {}".format(sum(enemy_scan)))
+        ##print("Enemy: {}, Direction: {}".format(is_near_enemy, enemy_direction))
+        ##print("enemy points {}".format(sum(enemy_scan)))
         return is_near_enemy, enemy_direction, enemy_dist
         
 
@@ -113,8 +113,8 @@ class EnemyDetector:
         if len_p1 < self.thresh_corner or len_p2 < self.thresh_corner or len_p3 < self.thresh_corner or len_p4 < self.thresh_corner or len_p5 < self.thresh_center:
             return False
         else:
-            #print(point_x, point_y, self.pose_x, self.pose_y, self.th, dist, ang_deg, ang_rad)
-            #print(len_p1, len_p2, len_p3, len_p4, len_p5)
+            ##print(point_x, point_y, self.pose_x, self.pose_y, self.th, dist, ang_deg, ang_rad)
+            ##print(len_p1, len_p2, len_p3, len_p4, len_p5)
             return True
 
 # End Respect
@@ -189,13 +189,13 @@ class TeriyakiBurger():
         
         self.pose_twist.angular.z = new_twist_ang_z
         self.pose_twist.linear.x = self.speed
-        #print(th, th_xy, new_twist_ang_z)
+        ##print(th, th_xy, new_twist_ang_z)
 
     def calcTargetTheta(self, pose_x, pose_y):
         x = self.poseToindex(pose_x)
         y = self.poseToindex(pose_y)
         th = TARGET_TH[x][y]
-        #print("POSE pose_x: {}, pose_y: {}. INDEX x:{}, y:{}".format(pose_x, pose_y, x, y))
+        ##print("POSE pose_x: {}, pose_y: {}. INDEX x:{}, y:{}".format(pose_x, pose_y, x, y))
         return th
 
     def poseToindex(self, pose):
@@ -231,11 +231,11 @@ class TeriyakiBurger():
             speed = self.speed
         else:
             speed = -self.speed
-        print("enemy_dist {}".format(self.enemy_dist))
+        #print("enemy_dist {}".format(self.enemy_dist))
         
         self.near_enemy_twist.angular.z = new_twist_ang_z
         self.near_enemy_twist.linear.x = speed
-        #print("Update near Enemy Twist")
+        ##print("Update near Enemy Twist")
 
     def isNearWall(self, scan):
         if not len(scan) == 360:
@@ -268,9 +268,9 @@ class TeriyakiBurger():
                 twist.linear.x = -self.speed
             self.vel_pub.publish(twist)
             # for debug
-            # print("POSE TWIST: {}, {}".format(self.pose_twist.linear.x, self.pose_twist.angular.z))
-            # print("ENEMY TWIST: {}, {}".format(self.near_enemy_twist.linear.x, self.near_enemy_twist.angular.z))
-            # print("wall: {}, Enemy: {}, X: {}, Z: {}".format(self.is_near_wall, self.is_near_enemy, twist.linear.x, twist.angular.z))
+            # #print("POSE TWIST: {}, {}".format(self.pose_twist.linear.x, self.pose_twist.angular.z))
+            # #print("ENEMY TWIST: {}, {}".format(self.near_enemy_twist.linear.x, self.near_enemy_twist.angular.z))
+            # #print("wall: {}, Enemy: {}, X: {}, Z: {}".format(self.is_near_wall, self.is_near_enemy, twist.linear.x, twist.angular.z))
 
             r.sleep()
 
