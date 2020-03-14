@@ -76,6 +76,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
 
     def vf(self,previous_state,target):
         pre_state = previous_state
+        """
         if self.color_flag[1] and self.target_distance(target) <self.vf_A_dist:
             if not pre_state == "vf_A":
                 self.stop_sending()
@@ -90,6 +91,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
             if self.color_flag[4]:
                 self.vf_flag_call(Int8(data=0))
                 self.target_states[target]["priority"] = -99
+        """
 
         if self.color_flag[2] and self.enemy_distance() < self.vf_B_dist:
             if not pre_state == "vf_B":

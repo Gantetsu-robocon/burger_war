@@ -14,6 +14,8 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
+from std_srvs.srv import Empty, EmptyResponse
+from burger_war.srv import DesiredPose, DesiredPoseResponse
 
 class Node:
     def __init__(self, num, parent, cost, heuristic):
@@ -241,19 +243,27 @@ class main():
         rospy.init_node('global_path_planner')
         self.ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         self.ac.wait_for_server()
-        self.desired_pose_sub = rospy.Subscriber('desired_pose', PoseStamped, self.desiredPoseCallback)
+
+        # Subscriber
         self.odom_sub = rospy.Subscriber('odom', Odometry, self.odomCallback)
-        self.reset_pathplan_sub = rospy.Subscriber('reset_pathplan', String, self.resetPathplanCallback)
 
-        self.succeeded_pub = rospy.Publisher('pathplan_succeeded', String, queue_size=1)
-
+    # When use service
+        self.desired_pose_srv = rospy.Service("desired_pose", DesiredPose, self.desiredPoseCallback)
+        self.reset_pathplan_sub = rospy.Service('reset_pathplan', Empty, self.resetPathplanCallback)
+        rospy.wait_for_service("pathplan_succeeded")
+        self.service_call = rospy.ServiceProxy("pathplan_succeeded", Empty)
         self.desired_pose = PoseStamped()
         self.current_pose = PoseStamped()
 
+        self.received_pose = False
+
     def desiredPoseCallback(self, data):
         self.ac.cancel_all_goals()
-        self.desired_pose = data
+        self.desired_pose = data.goal
+        self.received_pose = True
+        return DesiredPoseResponse(True)
 
+    def sendDesiredPose(self):
         start = [self.current_pose.pose.position.y,
                  -self.current_pose.pose.position.x]
         goal = [self.desired_pose.pose.position.x,
@@ -273,6 +283,7 @@ class main():
         self.index = 0
         while True:
             if self.index >= len(path):
+                self.received_pose = False
                 break
             else:
                 pose = path[self.index]
@@ -289,10 +300,12 @@ class main():
             # state = self.ac.get_state()
 
             if succeeded and self.index == len(path)-1:
-                self.succeeded_pub.publish('succeeded')
+                #self.succeeded_pub.publish('succeeded')
+                self.service_call()
             if not succeeded:
                 # self.succeeded_pub.publish('failed')
                 self.ac.cancel_all_goals()
+                self.received_pose = False
                 break
 
             self.index = self.index + 1
@@ -304,6 +317,7 @@ class main():
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
         self.index = 10
+        return EmptyResponse()
 
 
 if __name__ == '__main__':
