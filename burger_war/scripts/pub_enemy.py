@@ -39,7 +39,7 @@ class PubEnemyPose():
         self.t_camera = PoseStamped()
         self.t_camera.pose.orientation = (0.0, 0.0, 0.0, 1.0)
         self.t_lidar = PoseStamped()
-        self.t_camera.pose.orientation = (0.0, 0.0, 0.0, 1.0)
+        self.t_lidar.pose.orientation = (0.0, 0.0, 0.0, 1.0)
 
 
     def lisn_enemy_camera(self):
