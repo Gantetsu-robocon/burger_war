@@ -11,6 +11,7 @@ by Takuya Yamaguchi @dashimaki360
 import rospy
 from std_msgs.msg import Int8
 from std_msgs.msg import Int16MultiArray
+# from burger_war.srv import VisualFeedbackFlag
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
@@ -82,11 +83,18 @@ class EnemyBot(object):
         self.BlueSize = 0.0
         # target_id から取得したID一時保存
         self.real_target_id = 0
+        # VFフラグ
+        self.VF_change_Flag = 0
+
         # publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)   
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.color_flag_pub = rospy.Publisher('color_flag', Int16MultiArray, queue_size=10)
-        self.VF_change_Flag = 0
+
+        # service
+        #self.vf_flag_srv = rospy.Service("vf_flag", VisualFeedbackFlag, self.VFFlagCallback)
+
+
 
 
         # camera subscribver
@@ -201,6 +209,9 @@ class EnemyBot(object):
             self.color_flag_pub.publish(ColorFlag_forPublish)
 
             r.sleep()
+
+
+
 
     # target_IDを取得
     def targetIdCallback(self, data):
