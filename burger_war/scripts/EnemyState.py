@@ -32,14 +32,15 @@ class EnemyBot(object):
         self.rate = rospy.get_param("~rate", 5)
         self.resi_per = rospy.get_param("~resize_rate", 0.8)
 
-        self.k_p_A_rot = 1.0 #pゲイン（Pのみのときの最高速度）
-        self.k_i_A_rot = 0.01 #iゲインs
-        self.k_p_A_adv = 1.0 #pゲイン（Pのみのときの最高速度）
-        self.k_i_A_adv = 0.01 #iゲインs
-        self.k_p_B_rot = 1.0 #pゲイン（Pのみのときの最高速度）
-        self.k_i_B_rot = 0.01 #iゲインs
-        self.k_p_B_adv = 1.0 #pゲイン（Pのみのときの最高速度）
-        self.k_i_B_adv = 0.01 #iゲインs
+        self.k_p_A_rot = 0.5 #pゲイン
+        self.k_i_A_rot = 0.0 #iゲイン
+        self.k_p_A_adv = 0.5 #pゲイン
+        self.k_i_A_adv = 0.0 #iゲイン
+        self.k_p_B_rot = 0.5 #pゲイン
+        self.k_i_B_rot = 0.0 #iゲイン
+        self.k_p_B_adv = 0.5 #pゲイン
+        self.k_i_B_adv = 0.0 #iゲイン
+        self.k_p_C_rot = 0.2 #pゲイン
 
         self.diff_p_A_rot = 0
         self.diff_p_B_rot = 0
@@ -94,9 +95,6 @@ class EnemyBot(object):
         # service
         #self.vf_flag_srv = rospy.Service("vf_flag", VisualFeedbackFlag, self.VFFlagCallback)
 
-
-
-
         # camera subscribver
         # please uncoment out if you use camera
         if use_camera:
@@ -142,9 +140,12 @@ class EnemyBot(object):
                 if math.fabs(self.diff_p_A_rot) *(320*self.resi_per) < 5:
                     self.diff_i_A_rot = 0
                 twist.angular.z = self.k_p_A_rot*self.diff_p_A_rot + self.k_i_A_rot*self.diff_i_A_rot
-                self.diff_p_A_adv = (4000*self.resi_per*self.resi_per-self.BlueSize) / (4000*self.resi_per*self.resi_per)
+
+                self.diff_p_A_adv = (25000*self.resi_per*self.resi_per-self.BlueSize) / (25000*self.resi_per*self.resi_per)                
+                print(self.diff_p_A_adv)
                 self.diff_i_A_adv += self.diff_p_A_adv
-                if self.diff_p_A_adv < 0:
+                if self.diff_p_A_adv < 0.1:
+                    self.diff_p_A_adv = 0.1
                     self.diff_i_A_adv = 0
                 twist.linear.x = self.k_p_A_adv*self.diff_p_A_adv + self.k_i_A_adv*self.diff_i_A_adv
                 self.vel_pub.publish(twist)
@@ -156,10 +157,12 @@ class EnemyBot(object):
                 if math.fabs(self.diff_p_B_rot) *(320*self.resi_per) < 5:
                     self.diff_i_B_rot = 0
                 twist.angular.z = self.k_p_A_rot*self.diff_p_B_rot + self.k_i_A_rot*self.diff_i_B_rot
-                self.diff_p_B_adv = (4000*self.resi_per*self.resi_per-self.BlueSize) / (4000*self.resi_per*self.resi_per)
+
+                self.diff_p_B_adv = (25000*self.resi_per*self.resi_per-self.GreenSize) / (25000*self.resi_per*self.resi_per)
                 self.diff_i_B_adv += self.diff_p_B_adv
-                if self.diff_p_B_adv < 0:
-                    self.diff_i_B_adv = 0
+                if self.diff_p_B_adv < 0.1:
+                    self.diff_p_B_adv = 0.1
+                    self.diff_i_B_adv = 0.0
                 twist.linear.x = self.k_p_A_adv*self.diff_p_B_adv + self.k_i_A_adv*self.diff_i_B_adv
                 if math.fabs(self.diff_p_B_rot) > 0.5:
                     twist.linear.x = 0.0
@@ -167,17 +170,16 @@ class EnemyBot(object):
 
             # 敵が近いときのVF VF of C
             if self.VF_change_Flag == 3:
-                if self.cam_AR_size>(4000*self.resi_per*self.resi_per) or self.GreenSize>(45000*self.resi_per*self.resi_per): #近すぎるから離れよう
+                if self.AR_ID>0: #近すぎるから離れよう
                     twist.linear.x = -1.0
                 else :
                     twist.linear.x = 0.0
-                if self.AR_ID > 0:#相手に背を向けないように動こう
-                    twist.angular.z = self.AngleEnemy_AR*1.0/(180*3.141592/180)
-                elif self.AR_ID == 0:
+                if math.fabs(self.AngleEnemy_AR) < 90*3.141592/180:#相手に背を向けないように動こう
+                    twist.angular.z = self.k_p_C_rot * self.AngleEnemy_AR*1.0/(180*3.141592/180)
+                else:
                     twist.angular.z = 0.0
                 self.vel_pub.publish(twist)
 ###########################################################################
-
 
             # 相対位置・向きのpublish
             self.relative_pose_pub.publish(pose)
@@ -209,9 +211,6 @@ class EnemyBot(object):
             self.color_flag_pub.publish(ColorFlag_forPublish)
 
             r.sleep()
-
-
-
 
     # target_IDを取得
     def targetIdCallback(self, data):
@@ -267,8 +266,6 @@ class EnemyBot(object):
             center_max_y = 0
 
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 0, 0), 3)        
-
-       
         return (center_max_x, center_max_y, size_max ,size_max_w,size_max_h )
 
     # 緑色マーカの認識
@@ -318,7 +315,6 @@ class EnemyBot(object):
             center_max_x = 0
             center_max_y = 0
         self.img = cv2.rectangle(self.img, (size_max_x, size_max_y), (size_max_x+size_max_w, size_max_y+size_max_h), (0, 0, 0), 3)        
-
         return (center_max_x,center_max_y,size_max_w, size_max_h, size_max,size_max_x)
 
     # 青色マーカの認識
@@ -387,8 +383,6 @@ class EnemyBot(object):
                 rela_pose_y = 0
         
         return(rela_pose_x,rela_pose_y)
-        
-
 
     #ARマーカのカメラ座標上での位置を取得
     def ARPointSearch(self):
@@ -521,10 +515,9 @@ class EnemyBot(object):
         self.AngleEnemy_AR = self.EnemyAngle()
         #print('AngleEnemy_AR' , self.AngleEnemy_AR*180/3.141592,float(self.Green_Size_w)/float(self.Green_Size_h),self.cam_Point_x- self.GreenCenter_X)
         #print(float(self.Green_Size_w)/float(self.Green_Size_h))
-
         #print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
         #print('(Green x,y,h)=' , self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_h)
-        #print('()=' , float(self.Green_Size_w)/float(self.Green_Size_h),self.cam_Point_x- self.GreenCenter_X,self.GreenNum,float(self.GreenSize)/float(self.cam_Point_size))
+        #print('()=' , self.cam_AR_size,self.GreenSize)
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
 
