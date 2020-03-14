@@ -252,6 +252,7 @@ class main():
         self.reset_pathplan_sub = rospy.Service('reset_pathplan', Empty, self.resetPathplanCallback)
         rospy.wait_for_service("pathplan_succeeded")
         self.service_call = rospy.ServiceProxy("pathplan_succeeded", Empty)
+
         self.desired_pose = PoseStamped()
         self.current_pose = PoseStamped()
 
@@ -321,5 +322,7 @@ class main():
 
 
 if __name__ == '__main__':
-    main()
-    rospy.spin()
+    main = main()
+    while not rospy.is_shutdown():
+        if main.received_pose:
+            main.sendDesiredPose()

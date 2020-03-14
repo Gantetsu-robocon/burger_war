@@ -139,10 +139,8 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 #回避
                 if not pre_state =="escape":
                     self.stop_sending()
-                    print ""
-                    print "vf c starts"
-                    print ""
                     self.vf_flag_call(Int8(data=3))
+                    pre_state = "escape"
                     print ""
                     print "【state】:",pre_state
                     print ""
