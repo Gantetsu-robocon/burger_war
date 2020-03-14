@@ -112,6 +112,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
 
     def main(self):
         pre_state = ""
+        r = rospy.Rate(1)
         while not rospy.is_shutdown():
             self.target_priority_update()
 
@@ -157,7 +158,9 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                     print "【state】:",pre_state
                     print ""
                 
-                if self.goal_reached:
+                if self.goal_reached or self.target_states[target]["player"]==self.side:
+                    self.stop_sending()
+                    print "ゴール到達"
                     self.target_states[target]["priority"] = -99
                     self.goal_reached = False
                     pre_state = ""
@@ -176,12 +179,16 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                     print "【state】:",pre_state
                     print ""
                 
-                if self.goal_reached:
+                if self.goal_reached or self.target_states[target]["player"]==self.side:
+                    self.stop_sending()
+                    print "ゴール到達"
                     self.target_states[target]["priority"] = -99
                     self.goal_reached = False
                     pre_state = ""
+
                 #条件がそろえばvf
                 pre_state = self.vf(pre_state,target)
+                r.sleep()
         
 
 if __name__ == '__main__':
