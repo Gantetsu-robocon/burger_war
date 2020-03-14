@@ -12,7 +12,7 @@ import numpy as np
 from geometry_msgs.msg import PoseStamped, Quaternion
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
-from std_msgs.msg import String, Int16MultiArray, Int8
+from std_msgs.msg import String, Int16MultiArray, Int8, Bool
 
 class Target(object):
     def __init__(self):
@@ -75,6 +75,7 @@ class ServerReceiver(object):
         #Initialize other variables
         self.passed_time = 0
         self.color_flag = [0,0,0,0,0,0]
+        self.lidar_flag = False
         self.succeeded_goal = False
 
         #Publisher
@@ -88,6 +89,7 @@ class ServerReceiver(object):
         self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped,self.enemyposeCallback)
         self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
         self.color_flag_sub = rospy.Subscriber('color_flag_time',Int16MultiArray, self.colorCallback)
+        self.lidar_flag_sub = rospy.Subscriber('lidar_flag',Bool, self.lidarCallback)
 
     #Update target information
     def target_pose_update(self):
@@ -224,7 +226,7 @@ class ServerReceiver(object):
 
     def enemyposeCallback(self, pose):
         self.enemy_pose = pose
-        if ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0) and (self.color_flag[5] < self.last_target.time):
+        if ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0) and (self.color_flag[5] < self.last_target.time) and (self.lidar_flag==False):
             self.enemy_pose.pose.position.x = self.last_target.position[0]
             self.enemy_pose.pose.position.y = self.last_target.position[1]
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, self.last_target.position[2])
@@ -234,6 +236,9 @@ class ServerReceiver(object):
 
     def colorCallback(self, array):
         self.color_flag = array.data
+    
+    def lidarCallback(self, data):
+        self.lidar_flag = data
 
     #Get target
     def top_priority_target(self):
