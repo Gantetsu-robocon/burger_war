@@ -15,9 +15,9 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String, Int16MultiArray, Int8
 
 class Target(object):
-    def __init__(self):
+    def __init__(self,position):
         self.name = "n"
-        self.position = [0, 0, 0]
+        self.position = position
         self.time = 0
 
 class ServerReceiver(object):
@@ -40,7 +40,6 @@ class ServerReceiver(object):
 
         #Copy previous target state
         self.target_states_pre = copy.deepcopy(self.target_states)
-        self.last_target = Target()
 
         #Initialize robot position
         self.enemy_pose = PoseStamped()
@@ -58,6 +57,8 @@ class ServerReceiver(object):
             q = tf.transformations.quaternion_from_euler(0,0,0)
             self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
+            self.last_target = Target([1.3,0,np.pi])
+
         elif self.side == "b":
 
             self.enemy_pose.pose.position.x = -1.3
@@ -71,6 +72,8 @@ class ServerReceiver(object):
             self.my_pose.pose.position.z = 0 
             q = tf.transformations.quaternion_from_euler(0,0,np.pi)
             self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
+
+            self.last_target = Target([-1.3,0,0])
 
         #Initialize other variables
         self.passed_time = 0
@@ -224,11 +227,13 @@ class ServerReceiver(object):
 
     def enemyposeCallback(self, pose):
         self.enemy_pose = pose
+        """
         if ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0) and (self.color_flag[5] < self.last_target.time):
             self.enemy_pose.pose.position.x = self.last_target.position[0]
             self.enemy_pose.pose.position.y = self.last_target.position[1]
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, self.last_target.position[2])
             self.enemy_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
+        """
         self.target_pose_update()
         self.target_distance_update()
 

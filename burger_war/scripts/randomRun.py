@@ -24,7 +24,7 @@ class RandomBot():
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.vel_sub = rospy.Subscriber('cmd_vel',  Twist, self.update_timeem)
-        self.stack_time = rospy.get_param("~stack", 5)
+        self.stack_time = rospy.get_param("~stack", 8)
         self.time_em = rospy.Time.now().to_sec()
         self.time_now = rospy.Time.now().to_sec()
         self.flag = -3
@@ -32,20 +32,11 @@ class RandomBot():
 
     def calcTwist(self):
         value = random.randint(1,1000)
-        if value < 250:
+        if value < 500:
             x = 0.2
             th = 0
-        elif value < 500:
-            x = -0.2
-            th = 0
-        elif value < 750:
-            x = 0
-            th = 1
-        elif value < 1000:
-            x = 0
-            th = -1
         else:
-            x = 0
+            x = -0.2
             th = 0
         twist = Twist()
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0

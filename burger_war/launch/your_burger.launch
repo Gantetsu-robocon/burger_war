@@ -6,12 +6,12 @@
 
     <node pkg="burger_war" type="send_priority_goal.py" name="send_priority_goal" output="screen">
       <param name="side" value="$(arg side)" />
-      <param name="focous_dist" value="0.18"/>
+      <param name="focous_dist" value="0.30"/>
       <param name="enemy_distance_th" value="0.50"/>
-      <param name="time_th" value="0"/>
+      <param name="time_th" value="150"/>
       <param name="control_cycle" value="3.0"/>
       <param name="diff_theta_th" value="0.784"/>
-      <param name="close_th" value="0.8"/>
+      <param name="close_th" value="0.5"/>
       <param name="current_dir" value= "$(find burger_war)/scripts"/>
     </node>
     
