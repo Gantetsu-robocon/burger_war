@@ -63,10 +63,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         goal.pose.position.y = self.target_states[target_name]["pose"][1]
 
         q = tf.transformations.quaternion_from_euler(0,0,self.target_states[target_name]["pose"][2])
-        goal.pose.orientation.x = q[0]
-        goal.pose.orientation.y = q[1]
-        goal.pose.orientation.z = q[2]
-        goal.pose.orientation.w = q[3]
+        goal.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
 
         #ゴールをGlobal Plannerに送る
         self.desired_pose_call(goal)
