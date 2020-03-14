@@ -27,7 +27,7 @@ import def_state
 from server_receiver import ServerReceiver
 
 #for debug
-from IPython.terminal.debugger import set_trace
+#from IPython.terminal.debugger import set_trace
         
 class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
     def __init__(self):
@@ -41,6 +41,9 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         self.vf_A_dist = rospy.get_param("~vf_A_dist",self.focus_dist)
         self.vf_B_dist = rospy.get_param("~vf_B_dist",1.5*self.focus_dist)
         
+        #Service Server
+        self.path_success_srv = rospy.Service("pathplan_succeeded",Empty, self.successCallback)
+
         #Service Clint
         rospy.wait_for_service("desired_pose")
         self.desired_pose_call = rospy.ServiceProxy("desired_pose",DesiredPose)
@@ -49,8 +52,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         rospy.wait_for_service("vf_flag")
         self.vf_flag_call = rospy.ServiceProxy("vf_flag", VisualFeedbackFlag) 
 
-        #Service Server
-        self.path_success_srv = rospy.Service("pathplan_succeeded",Empty, self.successCallback)
+        self.goal_reached = False
 
     def successCallback(self,req):
         self.goal_reached = True
@@ -79,11 +81,11 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 self.stop_sending()
                 #vf Aスタート
                 self.vf_flag_call(Int8(data=0))
-                print ""
-                print "vf A starts"
-                print ""
                 self.vf_flag_call(Int8(data=1))
                 pre_state = "vf_A"
+                print ""
+                print "【state】:",pre_state
+                print ""
 
             if self.color_flag[4]:
                 self.vf_flag_call(Int8(data=0))
@@ -94,11 +96,11 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 self.stop_sending()
                 #vf Bスタート
                 self.cancel_goal_call()
-                print ""
-                print "vf B starts"
-                print ""
                 self.vf_flag_call(Int8(data=2))
                 pre_state = "vf_B"
+                print ""
+                print "【state】:",pre_state
+                print ""
 
             if self.color_flag[3]:
                 self.vf_flag_call(Int8(data=0))
@@ -139,16 +141,21 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                     print "vf c starts"
                     print ""
                     self.vf_flag_call(Int8(data=3))
-                    pre_state = "escape"
+                    print ""
+                    print "【state】:",pre_state
+                    print ""
 
             elif ((ene_is_near and ene_not_face) or ene_is_far) and in_time and no_marker_close:
                 #最も点数の高い的を取りに行く
-                if not (pre_state =="get_highest_marker" and pre_state == "vf_A" and pre_state == "vf_B"):
+                if not (pre_state =="get_highest_marker" or pre_state == "vf_A" or pre_state == "vf_B"):
                     self.stop_sending()
                     target, _ = self.top_priority_target()
                     self.send_goal(target)
                     time.sleep(0.5)
                     pre_state = "get_highest_marker"
+                    print ""
+                    print "【state】:",pre_state
+                    print ""
                 
                 if self.goal_reached:
                     self.target_states[target]["priority"] = -99
@@ -159,12 +166,15 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
 
             else:
                 #最も近い的を取りに行く
-                if not (pre_state =="get_nearest_marker" and pre_state == "vf_A" and pre_state == "vf_B"):
+                if not (pre_state =="get_nearest_marker" or pre_state == "vf_A" or pre_state == "vf_B"):
                     self.stop_sending()
                     target, _ = self.nearest_target()
                     self.send_goal(target)
                     time.sleep(0.5)
                     pre_state = "get_nearest_marker"
+                    print ""
+                    print "【state】:",pre_state
+                    print ""
                 
                 if self.goal_reached:
                     self.target_states[target]["priority"] = -99
@@ -173,7 +183,6 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 #条件がそろえばvf
                 pre_state = self.vf(pre_state,target)
         
-        print "【state】:",pre_state
 
 if __name__ == '__main__':
     rospy.init_node('send_priority_goal')

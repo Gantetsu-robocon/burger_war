@@ -11,7 +11,7 @@ by Takuya Yamaguchi @dashimaki360
 import rospy
 from std_msgs.msg import Int8
 from std_msgs.msg import Int16MultiArray
-# from burger_war.srv import VisualFeedbackFlag
+from burger_war.srv import VisualFeedbackFlag,VisualFeedbackFlagResponse
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
@@ -93,7 +93,7 @@ class EnemyBot(object):
         self.color_flag_pub = rospy.Publisher('color_flag', Int16MultiArray, queue_size=10)
 
         # service
-        #self.vf_flag_srv = rospy.Service("vf_flag", VisualFeedbackFlag, self.VFFlagCallback)
+        self.vf_flag_srv = rospy.Service("vf_flag", VisualFeedbackFlag, self.VFFlagCallback)
 
         # camera subscribver
         # please uncoment out if you use camera
@@ -103,7 +103,7 @@ class EnemyBot(object):
             self.bridge = CvBridge()
             self.target_id_sub = rospy.Subscriber('target_id', MarkerArray, self.targetIdCallback)
             self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
-            self.vf_flag_pub =rospy.Subscriber('/vf_flag', Int8, self.VFFlagCallback)
+            #self.vf_flag_pub =rospy.Subscriber('/vf_flag', Int8, self.VFFlagCallback)
             
     def strategy(self):
         r = rospy.Rate(self.rate)
@@ -170,10 +170,12 @@ class EnemyBot(object):
 
             # 敵が近いときのVF VF of C
             if self.VF_change_Flag == 3:
+                """
                 if self.AR_ID>0: #近すぎるから離れよう
                     twist.linear.x = -1.0
                 else :
                     twist.linear.x = 0.0
+                """
                 if math.fabs(self.AngleEnemy_AR) < 90*3.141592/180:#相手に背を向けないように動こう
                     twist.angular.z = self.k_p_C_rot * self.AngleEnemy_AR*1.0/(180*3.141592/180)
                 else:
@@ -498,7 +500,8 @@ class EnemyBot(object):
 
 
     def VFFlagCallback(self, data):
-        self.VF_change_Flag = data.data
+        self.VF_change_Flag = data.flag.data
+        return VisualFeedbackFlagResponse(True)
 
     def imageCallback(self, data):
         try:

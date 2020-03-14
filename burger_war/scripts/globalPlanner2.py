@@ -14,8 +14,8 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
-from std_srvs.srv import Empty
-# from burger_war.srv import DesiredPose
+from std_srvs.srv import Empty, EmptyResponse
+from burger_war.srv import DesiredPose, DesiredPoseResponse
 
 class Node:
     def __init__(self, num, parent, cost, heuristic):
@@ -266,22 +266,28 @@ class main():
         self.odom_sub = rospy.Subscriber('odom', Odometry, self.odomCallback)
         
         # When use service
-        # rospy.wait_for_service("pathplan_succeeded")
-        # self.desired_pose_srv = rospy.Service("desired_pose", DesiredPose, self.desiredPoseCallback)
-        # self.reset_pathplan_sub = rospy.Service('reset_pathplan', Empty, self.resetPathplanCallback)
+        self.desired_pose_srv = rospy.Service("desired_pose", DesiredPose, self.desiredPoseCallback)
+        self.reset_pathplan_sub = rospy.Service('reset_pathplan', Empty, self.resetPathplanCallback)
+        rospy.wait_for_service("pathplan_succeeded")
+        self.service_call = rospy.ServiceProxy("pathplan_succeeded", Empty)
 
         # When use topic
-        self.desired_pose_sub = rospy.Subscriber('desired_pose', PoseStamped, self.desiredPoseCallback)
-        self.reset_pathplan_sub = rospy.Subscriber('reset_pathplan', String, self.resetPathplanCallback)
-        self.succeeded_pub = rospy.Publisher('pathplan_succeeded', String, queue_size=1)
+        #self.desired_pose_sub = rospy.Subscriber('desired_pose', PoseStamped, self.desiredPoseCallback)
+        #self.reset_pathplan_sub = rospy.Subscriber('reset_pathplan', String, self.resetPathplanCallback)
+        #self.succeeded_pub = rospy.Publisher('pathplan_succeeded', String, queue_size=1)
 
         self.desired_pose = PoseStamped()
         self.current_pose = PoseStamped()
+        
+        self.received_pose = False
 
     def desiredPoseCallback(self, data):
         self.ac.cancel_all_goals()
-        self.desired_pose = data
+        self.desired_pose = data.goal
+        self.received_pose = True
+        return DesiredPoseResponse(True)
 
+    def sendDesiredPose(self):
         start_pos = [self.current_pose.pose.position.y,
                      -self.current_pose.pose.position.x,
                      0]
@@ -302,6 +308,7 @@ class main():
         self.index = 0
         while True:
             if self.index >= len(path):
+                self.received_pose = False
                 break
             else:
                 pose = path[self.index]
@@ -320,11 +327,11 @@ class main():
 
             if succeeded and self.index == len(path)-1:
                 self.furifuri(pose)
-                self.succeeded_pub.publish('succeeded')
-                # service_call = rospy.ServiceProxy("pathplan_succeeded", Empty)
-                # service_call()
+                #self.succeeded_pub.publish('succeeded')
+                self.service_call()
             if not succeeded:
                 self.ac.cancel_all_goals()
+                self.received_pose = False
                 break
 
             self.index = self.index + 1
@@ -336,6 +343,7 @@ class main():
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
         self.index = 100
+        return EmptyResponse()
 
     def furifuri(self, pose):
         q = tf.transformations.quaternion_from_euler(0, 0, pose[2]+0.3)
@@ -349,5 +357,7 @@ class main():
 
 
 if __name__ == '__main__':
-    main()
-    rospy.spin()
+    main = main()
+    while not rospy.is_shutdown():
+        if main.received_pose:
+            main.sendDesiredPose()
