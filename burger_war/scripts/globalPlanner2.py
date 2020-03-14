@@ -177,7 +177,7 @@ class GlobalPathPlan(object):
         self.pos.extend([self.goal])
         self.weight.extend([1, 1, 1, 1])
 
-    def add_theta(self):
+    def add_theta(self, path):
         theta0 = math.pi/4
         theta1 = 3*math.pi/4
         theta2 = 5*math.pi/4
@@ -192,24 +192,33 @@ class GlobalPathPlan(object):
                       'AD': theta1}
 
         desired_path = []
-        for (i, num) in enumerate(self.path):
+        for (i, num) in enumerate(path):
             if num == 0:
-                pass
+                desired_path.append([self.start[0], self.start[1], self.calc_angle(self.start, self.pos[path[i+1]])])
             elif num == 9:
+                desired_path.append([self.goal[0], self.goal[1], self.calc_angle(self.pos[path[i-1]], self.goal)])
                 desired_path.append(self.goal)
             else:
                 x = self.pos[num][0]
                 y = self.pos[num][1]
-                x_next = (self.pos[self.path[i+1]][0] + x)/2
-                y_next = (self.pos[self.path[i+1]][1] + y)/2
-                x_prev = (self.pos[self.path[i-1]][0] + x)/2
-                y_prev = (self.pos[self.path[i-1]][1] + y)/2
+                x_next = (self.pos[path[i+1]][0] + x)/2
+                y_next = (self.pos[path[i+1]][1] + y)/2
+                x_prev = (self.pos[path[i-1]][0] + x)/2
+                y_prev = (self.pos[path[i-1]][1] + y)/2
 
                 area_next = self.where_am_I([x_next, y_next])
                 area_prev = self.where_am_I([x_prev, y_prev])
-
                 theta = THETA_DICT[area_prev + area_next]
-                desired_path.append([x, y, theta])
+
+                x_next = x + 0.2*math.cos(theta)
+                y_next = y + 0.2*math.sin(theta)
+                x_prev = x - 0.2*math.cos(theta)
+                y_prev = y - 0.2*math.sin(theta)
+
+                desired_path.append([x_prev, y_prev, desired_path[-1][2]])
+                desired_path.append([x_prev, y_prev, theta])
+                desired_path.append([x_next, y_next, theta])
+                desired_path.append([x_next, y_next, self.calc_angle(self.pos[num], self.pos[path[i+1]])])
         return desired_path
 
     def calc_weight(self):
@@ -224,37 +233,52 @@ class GlobalPathPlan(object):
 
             self.weight[i] = dist
 
+    def calc_angle(self, pos1, pos2):
+        return math.atan2(pos2[1]-pos1[1], pos2[0]-pos1[0])
 
     def searchPath(self):
-        if self.area_s == self.area_g:
-            return [self.goal]
+        if self.area_s != self.area_g:
+            self.connect_node()
+            self.calc_weight()
+            self.graph = Graph(self.node_s, self.node_t, self.pos, self.weight)
+            self.graph_path = self.graph.search(0, 9)
+            desired_path = self.add_theta(self.graph_path)
+        else:
+            desired_path = []
+            theta_sg = self.calc_angle(self.start, self.goal)
+            if math.cos(theta_sg - self.goal[2]) < 0:
+                theta_sg += math.pi
 
-        self.connect_node()
-        self.calc_weight()
-        self.graph = Graph(self.node_s, self.node_t, self.pos, self.weight)
-        self.path = self.graph.search(0, 9)
-        print("path number : " + str(self.path))
-        desired_path = self.add_theta()
+            desired_path.append([self.start[0], self.start[1], theta_sg])
+            desired_path.append([self.goal[0], self.goal[1], theta_sg])
+            desired_path.append(self.goal)
         return desired_path
 
 
 class main():
     def __init__(self):
+        # Initialize
         rospy.init_node('global_path_planner')
         self.ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         self.ac.wait_for_server()
 
         # Subscriber
         self.odom_sub = rospy.Subscriber('odom', Odometry, self.odomCallback)
-
-    # When use service
+        
+        # When use service
         self.desired_pose_srv = rospy.Service("desired_pose", DesiredPose, self.desiredPoseCallback)
         self.reset_pathplan_sub = rospy.Service('reset_pathplan', Empty, self.resetPathplanCallback)
         rospy.wait_for_service("pathplan_succeeded")
         self.service_call = rospy.ServiceProxy("pathplan_succeeded", Empty)
+
+        # When use topic
+        #self.desired_pose_sub = rospy.Subscriber('desired_pose', PoseStamped, self.desiredPoseCallback)
+        #self.reset_pathplan_sub = rospy.Subscriber('reset_pathplan', String, self.resetPathplanCallback)
+        #self.succeeded_pub = rospy.Publisher('pathplan_succeeded', String, queue_size=1)
+
         self.desired_pose = PoseStamped()
         self.current_pose = PoseStamped()
-
+        
         self.received_pose = False
 
     def desiredPoseCallback(self, data):
@@ -264,17 +288,18 @@ class main():
         return DesiredPoseResponse(True)
 
     def sendDesiredPose(self):
-        start = [self.current_pose.pose.position.y,
-                 -self.current_pose.pose.position.x]
-        goal = [self.desired_pose.pose.position.x,
-                self.desired_pose.pose.position.y,
-                2*math.acos(self.desired_pose.pose.orientation.w)]
+        start_pos = [self.current_pose.pose.position.y,
+                     -self.current_pose.pose.position.x,
+                     0]
+        goal_pos = [self.desired_pose.pose.position.x,
+                    self.desired_pose.pose.position.y,
+                    2*math.acos(self.desired_pose.pose.orientation.w)]
         if self.desired_pose.pose.orientation.z < 0:
-            goal[2] = - goal[2]
+            goal_pos[2] = - goal_pos[2]
 
-        pathplanner = GlobalPathPlan(start, goal)
+        pathplanner = GlobalPathPlan(start_pos, goal_pos)
         path = pathplanner.searchPath()
-        #rospy.loginfo("path points : " + str(path))
+        # path = [[1, 0, math.pi/2], [0, 1, math.pi], [-1, 0, 3*math.pi/2], [0, -1, 0]]
 
         self.goal = MoveBaseGoal()
         self.goal.target_pose.header.frame_id = 'map'
@@ -287,23 +312,24 @@ class main():
                 break
             else:
                 pose = path[self.index]
+
+            ## Send next pos
             self.goal.target_pose.pose.position.x =  pose[0]
             self.goal.target_pose.pose.position.y =  pose[1]
             q = tf.transformations.quaternion_from_euler(0, 0, pose[2])
-            self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
-
-            #rospy.loginfo("Sending goal:" + str(pose))                                          
+            self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
             self.ac.send_goal(self.goal)
+            ## -------------
             
             succeeded = self.ac.wait_for_result(rospy.Duration(20))
                 
             # state = self.ac.get_state()
 
             if succeeded and self.index == len(path)-1:
+                self.furifuri(pose)
                 #self.succeeded_pub.publish('succeeded')
                 self.service_call()
             if not succeeded:
-                # self.succeeded_pub.publish('failed')
                 self.ac.cancel_all_goals()
                 self.received_pose = False
                 break
@@ -316,10 +342,22 @@ class main():
     
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
-        self.index = 10
+        self.index = 100
         return EmptyResponse()
+
+    def furifuri(self, pose):
+        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]+0.3)
+        self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
+        self.ac.send_goal(self.goal)
+        self.ac.wait_for_result(rospy.Duration(2))
+        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]-0.3)
+        self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
+        self.ac.send_goal(self.goal)
+        self.ac.wait_for_result(rospy.Duration(2))
 
 
 if __name__ == '__main__':
-    main()
-    rospy.spin()
+    main = main()
+    while not rospy.is_shutdown():
+        if main.received_pose:
+            main.sendDesiredPose()

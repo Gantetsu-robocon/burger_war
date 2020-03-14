@@ -77,7 +77,7 @@
     </group>
     
     <!-- teriyaki -->
-    <node pkg="burger_war" type="level_2_teriyaki.py" name="teriyakiRun" output="screen"/>
+    <node pkg="burger_war" type="level_2_teriyaki.py" name="teriyakiRun" output="log"/>
 
 
   </group>

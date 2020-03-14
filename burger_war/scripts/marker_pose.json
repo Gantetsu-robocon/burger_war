@@ -51,7 +51,7 @@
     "Tomato_S":{ 
       "player": "n", 
       "point": "1",
-      "pose": [0.455,0.53,0],
+      "pose": [0,0.53,0],
       "priority":0,
       "distance":0
     }, 
@@ -65,14 +65,14 @@
     "Omelette_S":{
       "player": "n", 
       "point": "1",
-      "pose": [0.455,-0.53,0],
+      "pose": [0,-0.53,0],
       "priority":0,
       "distance":0
     }, 
     "Pudding_N":{
       "player": "n", 
       "point": "1",
-      "pose": [-0.455,0.53,3.1415],
+      "pose": [0,0.53,3.1415],
       "priority":0,
       "distance":0
     }, 
@@ -86,7 +86,7 @@
     "OctopusWiener_N":{
       "player": "n", 
       "point": "1",
-      "pose": [-0.455,-0.53,3.1415],
+      "pose": [0,-0.53,3.1415],
       "priority":0,
       "distance":0
     }, 
@@ -107,14 +107,14 @@
     "FriedShrimp_E":{
       "player": "n", 
       "point": "1",
-      "pose": [0,-0.175,1.5707],
+      "pose": [0,-0.53,1.5707],
       "priority":0,
       "distance":0
     }, 
     "FriedShrimp_W":{
       "player": "n", 
       "point": "1",
-      "pose": [0,0.175,-1.5707],
+      "pose": [0,0.53,-1.5707],
       "priority":0,
       "distance":0
     }, 
