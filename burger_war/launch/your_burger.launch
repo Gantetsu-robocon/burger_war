@@ -11,14 +11,11 @@
       <param name="time_th" value="0"/>
       <param name="control_cycle" value="3.0"/>
       <param name="diff_theta_th" value="0.784"/>
-      <param name="near_dist_th" value="0.8"/>
-      <param name="use_global_planner" value="True"/>
-      <param name="ignore_enemy" value="False"/>
-      <param name="use_odom" value="False"/>
+      <param name="close_th" value="0.8"/>
       <param name="current_dir" value= "$(find burger_war)/scripts"/>
     </node>
     
-    <node pkg="burger_war" type="globalPlanner.py" name="globalPlanner" output="screen"/>
+    <node pkg="burger_war" type="globalPlanner2.py" name="globalPlanner" output="screen"/>
     <node pkg="burger_war" type="randomRun.py" name="randomRun" output="screen"/>
     <!-- localization & navigation -->
     <include file="$(find burger_navigation)/launch/burger_navigation.launch"/>
