@@ -108,7 +108,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 pre_state = ""
 
         if pre_state =="vf":
-            if not self.color_flag[2]: #マーカーが見えなくなったら
+            if not self.color_flag[2] or self.enemy_distance < 0.2: #マーカーが見えなくなるor敵と近づきすぎる
                 self.vf_flag_call(Int8(data=0))
                 pre_state = ""
 
@@ -149,7 +149,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
             if self.target_states[self.enemy_target[0]]["player"] == "n" or \
                 self.target_states[self.enemy_target[1]]["player"] == "n" or \
                 self.target_states[self.enemy_target[2]]["player"] == "n" :
-                self.vf_B_dist = 99
+                self.vf_B_dist = 1.2
             else:
                 self.vf_B_dist = default_vf_B_dist
             
@@ -169,8 +169,8 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                     self.stop_sending()
                     th = math.atan2(self.enemy_pose.pose.position.y-self.my_pose.pose.position.y,
                                     self.enemy_pose.pose.position.x-self.my_pose.pose.position.x)
-                    x = self.enemy_pose.pose.position.x - default_vf_B_dist*math.cos(th)
-                    y = self.enemy_pose.pose.position.y - default_vf_B_dist*math.sin(th)
+                    x = self.enemy_pose.pose.position.x - 0.2*math.cos(th)
+                    y = self.enemy_pose.pose.position.y - 0.2*math.sin(th)
                     target = [x,y,th]
                     self.send_goal(target)
                     send_time = rospy.Time.now().to_sec()
