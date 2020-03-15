@@ -309,6 +309,7 @@ class main():
         while True:
             if self.index >= len(path):
                 self.received_pose = False
+                self.service_call()
                 break
             else:
                 pose = path[self.index]
@@ -332,6 +333,7 @@ class main():
             if not succeeded:
                 self.ac.cancel_all_goals()
                 self.received_pose = False
+                self.service_call()
                 break
 
             self.index = self.index + 1
@@ -347,11 +349,11 @@ class main():
         return EmptyResponse()
 
     def furifuri(self, pose):
-        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]+0.1)
+        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]+0.2)
         self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
         self.ac.send_goal(self.goal)
         self.ac.wait_for_result(rospy.Duration(2))
-        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]-0.1)
+        q = tf.transformations.quaternion_from_euler(0, 0, pose[2]-0.2)
         self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
         self.ac.send_goal(self.goal)
         self.ac.wait_for_result(rospy.Duration(2))

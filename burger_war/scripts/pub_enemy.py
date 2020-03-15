@@ -66,11 +66,11 @@ class PubEnemyPose():
         if self.flag_lidar == True:
             msg.pose = self.t_lidar.pose
             self.enemy_pub.publish(msg)
-            rospy.loginfo("Publish Lidar pose")
+            #rospy.loginfo("Publish Lidar pose")
         elif self.flag_color == True:
             msg.pose = self.t_camera.pose
             self.enemy_pub.publish(msg)
-            rospy.loginfo("Publish Camera pose")
+            #rospy.loginfo("Publish Camera pose")
 
     def flagcolorCallback(self,flag):
         if (flag.data[0] + flag.data[2] + flag.data[3]) == 0 :
@@ -93,4 +93,5 @@ class PubEnemyPose():
 if __name__ == '__main__':
     rospy.init_node('pub_enemy_abs')
     pub_enemy = PubEnemyPose()
+    rospy.sleep(20)
     pub_enemy.main()
