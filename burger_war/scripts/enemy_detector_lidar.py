@@ -19,11 +19,11 @@ class EnemyDetector:
         #self.map_data#このクラスが持つ「num」変数に引数を格納
         self.tf_broadcaster  = tf.TransformBroadcaster()
         self.tf_listener     = tf.TransformListener()
-        self.sub_obstacles   = rospy.Subscriber('obstacles', Obstacles, self.obstacles_callback)
-        self.pub_robot2enemy = rospy.Publisher('robot2enemy', Float32, queue_size=10)
+        self.pub_robot2enemy = rospy.Publisher('robot2enemy', Float32, queue_size=5)
         self.robot_name      = rospy.get_param('~robot_name', '')
-        
-        self.pub_flag = rospy.Publisher('lidar_flag', Bool, queue_size=10)
+
+        self.pub_flag = rospy.Publisher('lidar_flag', Bool, queue_size=1)
+        self.sub_obstacles   = rospy.Subscriber('obstacles', Obstacles, self.obstacles_callback)
 
         self.flag = False
 

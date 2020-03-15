@@ -15,9 +15,9 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String, Int16MultiArray, Int8, Bool
 
 class Target(object):
-    def __init__(self):
+    def __init__(self,position):
         self.name = "n"
-        self.position = [0, 0, 0]
+        self.position = position
         self.time = 0
 
 class ServerReceiver(object):
@@ -40,7 +40,6 @@ class ServerReceiver(object):
 
         #Copy previous target state
         self.target_states_pre = copy.deepcopy(self.target_states)
-        self.last_target = Target()
 
         #Initialize robot position
         self.enemy_pose = PoseStamped()
@@ -58,6 +57,8 @@ class ServerReceiver(object):
             q = tf.transformations.quaternion_from_euler(0,0,0)
             self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
+            self.last_target = Target([1.3,0,np.pi])
+
         elif self.side == "b":
 
             self.enemy_pose.pose.position.x = -1.3
@@ -71,6 +72,8 @@ class ServerReceiver(object):
             self.my_pose.pose.position.z = 0 
             q = tf.transformations.quaternion_from_euler(0,0,np.pi)
             self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
+
+            self.last_target = Target([-1.3,0,0])
 
         #Initialize other variables
         self.passed_time = 0
@@ -181,6 +184,7 @@ class ServerReceiver(object):
     
     def target_priority_update(self):
         for target_name in self.target_states:
+            point = 0
             #自分自身の的は除外
             if self.side == 'b' and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R"):
                 self.target_states[target_name]["priority"] = -99
@@ -194,7 +198,7 @@ class ServerReceiver(object):
                 #相手がとっている的のポイントは２倍
                 if (self.side == 'b' and self.target_states[target_name]["player"] == 'r') or \
                     (self.side == 'r' and self.target_states[target_name]["player"]=='b'):
-                    point = float(2* self.target_states[target_name]["point"])
+                    point = 2*float(self.target_states[target_name]["point"])
                 else:
                     point = float(self.target_states[target_name]["point"])
                 dist = float(self.target_states[target_name]["distance"])

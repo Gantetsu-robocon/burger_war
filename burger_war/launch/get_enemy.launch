@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="rate" default="2"/> <!-- rate = control rate -->
+  <arg name="rate" default="5"/> <!-- rate = control rate -->
   <arg name="robot_name" default=""/>
 
   <!-- Estimate enemy position by canera -->
@@ -10,14 +10,16 @@
     </node>
     <node pkg="burger_war" type="enemy_detector_camera.py" name="enemy_detector_camera" output="log">
     </node>
-    <node pkg="burger_war" type="pub_enemy.py" name="pub_enemy" output="log">
-      <param name="rate" value="$(arg rate)"/>
-    </node>
     
   <!-- Estimate enemy position by LiDAR -->
   <include file="$(find burger_war)/launch/enemy_detector.launch">
       <arg name="robot_name" value="$(arg robot_name)" />
   </include>
+
+  <!-- Publish enemy pose -->
+  <node pkg="burger_war" type="pub_enemy.py" name="pub_enemy" output="screen">
+      <param name="rate" value="$(arg rate)"/>
+  </node>
 
   <!-- Publish my pose topic -->  
     <node pkg="burger_war" type="pub_my_pose.py" name="pub_my_pose" output="log">
