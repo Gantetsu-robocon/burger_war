@@ -30,7 +30,7 @@ class TransformEnemy():
         self.br_abs = tf2_ros.TransformBroadcaster()
         self.enemy_sub = rospy.Subscriber('/relative_pose', PoseStamped, self.enemyCallback)
         self.flag_sub = rospy.Subscriber('/color_flag', Int16MultiArray,self.flagCallback)
-        self.flag_pub = rospy.Publisher('color_flag_time', Int16MultiArray, queue_size=10)
+        self.flag_pub = rospy.Publisher('color_flag_time', Int16MultiArray, queue_size=1)
 
         #Initialize
         self.enemy_ps = PoseStamped()
