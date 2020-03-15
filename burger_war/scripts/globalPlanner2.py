@@ -210,10 +210,10 @@ class GlobalPathPlan(object):
                 area_prev = self.where_am_I([x_prev, y_prev])
                 theta = THETA_DICT[area_prev + area_next]
 
-                x_next = x + 0.2*math.cos(theta)
-                y_next = y + 0.2*math.sin(theta)
-                x_prev = x - 0.2*math.cos(theta)
-                y_prev = y - 0.2*math.sin(theta)
+                x_next = x + 0.1*math.cos(theta)
+                y_next = y + 0.1*math.sin(theta)
+                x_prev = x - 0.1*math.cos(theta)
+                y_prev = y - 0.1*math.sin(theta)
 
                 desired_path.append([x_prev, y_prev, desired_path[-1][2]])
                 desired_path.append([x_prev, y_prev, theta])
@@ -246,8 +246,8 @@ class GlobalPathPlan(object):
         else:
             desired_path = []
             theta_sg = self.calc_angle(self.start, self.goal)
-            if math.cos(theta_sg - self.goal[2]) < 0:
-                theta_sg += math.pi
+            # if math.cos(theta_sg - self.goal[2]) < 0:
+            #     theta_sg += math.pi
 
             desired_path.append([self.start[0], self.start[1], theta_sg])
             desired_path.append([self.goal[0], self.goal[1], theta_sg])
@@ -278,16 +278,21 @@ class main():
 
         self.desired_pose = PoseStamped()
         self.current_pose = PoseStamped()
+        self.index = 0
+        self.path = [[0, 0, 0]]
         
         self.received_pose = False
 
     def desiredPoseCallback(self, data):
-        self.ac.cancel_all_goals()
-        self.desired_pose = data.goal
         self.received_pose = True
-        return DesiredPoseResponse(True)
 
-    def sendDesiredPose(self):
+        if self.desired_pose == data.goal:
+            return DesiredPoseResponse(True)
+            
+        self.ac.cancel_all_goals()
+        self.index = 0
+        self.desired_pose = data.goal
+
         start_pos = [self.current_pose.pose.position.y,
                      -self.current_pose.pose.position.x,
                      0]
@@ -298,45 +303,46 @@ class main():
             goal_pos[2] = - goal_pos[2]
 
         pathplanner = GlobalPathPlan(start_pos, goal_pos)
-        path = pathplanner.searchPath()
-        # path = [[1, 0, math.pi/2], [0, 1, math.pi], [-1, 0, 3*math.pi/2], [0, -1, 0]]
+        self.path = pathplanner.searchPath()
 
+        return DesiredPoseResponse(True)
+
+    def sendDesiredPose(self):
         self.goal = MoveBaseGoal()
         self.goal.target_pose.header.frame_id = 'map'
         self.goal.target_pose.header.stamp = rospy.Time.now()
 
-        self.index = 0
-        while True:
-            if self.index >= len(path):
-                self.received_pose = False
-                self.service_call()
-                break
-            else:
-                pose = path[self.index]
+        if self.index >= len(self.path):
+            self.received_pose = False
+            self.service_call()
+            return 0
+        else:
+            pose = self.path[self.index]
 
-            ## Send next pos
-            self.goal.target_pose.pose.position.x =  pose[0]
-            self.goal.target_pose.pose.position.y =  pose[1]
-            q = tf.transformations.quaternion_from_euler(0, 0, pose[2])
-            self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
-            self.ac.send_goal(self.goal)
-            ## -------------
+        ## Send next pos
+        self.goal.target_pose.pose.position.x =  pose[0]
+        self.goal.target_pose.pose.position.y =  pose[1]
+        q = tf.transformations.quaternion_from_euler(0, 0, pose[2])
+        self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
+        self.ac.send_goal(self.goal)
+        ## -------------
+        
+        succeeded = self.ac.wait_for_result(rospy.Duration(20))
             
-            succeeded = self.ac.wait_for_result(rospy.Duration(20))
-                
-            # state = self.ac.get_state()
+        # state = self.ac.get_state()
 
-            if succeeded and self.index == len(path)-1:
-                self.furifuri(pose)
-                #self.succeeded_pub.publish('succeeded')
-                self.service_call()
-            if not succeeded:
-                self.ac.cancel_all_goals()
-                self.received_pose = False
-                self.service_call()
-                break
+        if succeeded and self.index == len(self.path)-1:
+            self.furifuri(pose)
+            #self.succeeded_pub.publish('succeeded')
+            self.service_call()
+            return 0
+        if not succeeded:
+            self.ac.cancel_all_goals()
+            self.received_pose = False
+            self.service_call()
+            return 0 
 
-            self.index = self.index + 1
+        self.index = self.index + 1
             
 
     def odomCallback(self, data):
@@ -344,7 +350,7 @@ class main():
     
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
-        self.index = 100
+        self.index = 0
         self.received_pose = False
         return EmptyResponse()
 
