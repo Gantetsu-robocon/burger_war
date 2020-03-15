@@ -33,7 +33,7 @@ class RandomBot():
     def calcTwist(self):
         value = random.randint(1,1000)
         if value < 500:
-            x = 0.2
+            x = -0.2
             th = 0
         else:
             x = -0.2
@@ -65,7 +65,7 @@ class RandomBot():
             #print "Time distance = " ,self.time_dist
             if self.time_dist > self.stack_time:
                 print ""
-                print"randomRun"
+                print"EscapeRun"
                 print ""
                 for i in range(5):
                     twist = self.calcTwist()
