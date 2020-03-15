@@ -93,5 +93,4 @@ class PubEnemyPose():
 if __name__ == '__main__':
     rospy.init_node('pub_enemy_abs')
     pub_enemy = PubEnemyPose()
-    rospy.sleep(20)
     pub_enemy.main()
