@@ -35,9 +35,8 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         #Get parameter
         self.enemy_distance_th = rospy.get_param("~enemy_distance_th",0.50)
         self.time_th = rospy.get_param("~time_th", 150)
-        self.control_cycle = rospy.get_param("~control_cycle", 5.0)
         self.diff_theta_th = rospy.get_param("~diff_theta_th",0.7854) #pi/4
-        self.close_th = rospy.get_param("~close_th",1.0)
+        self.close_th = rospy.get_param("~close_th",0.8)
         self.vf_A_dist = rospy.get_param("~vf_A_dist",self.focus_dist)
         self.vf_B_dist = rospy.get_param("~vf_B_dist",0.5)
         
@@ -133,13 +132,13 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 #最も点数の高い的を取りに行く
                 if not (pre_state =="get_highest_marker" or pre_state == "vf"):
                     self.stop_sending()
-                    target, _ = self.top_priority_target()
+                    target, point = self.top_priority_target()
                     self.send_goal(target)
                     time.sleep(0.5)
                     pre_state = "get_highest_marker"
                     print ""
                     print "【state】:",pre_state
-                    print "  target:", target
+                    print "  target:", target,point
                     print ""
                 
                 if self.goal_reached or self.target_states[target]["player"]==self.side:

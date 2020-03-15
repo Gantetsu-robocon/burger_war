@@ -24,7 +24,7 @@ class RandomBot():
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.vel_sub = rospy.Subscriber('cmd_vel',  Twist, self.update_timeem)
-        self.stack_time = rospy.get_param("~stack", 8)
+        self.stack_time = rospy.get_param("~stack", 5)
         self.time_em = rospy.Time.now().to_sec()
         self.time_now = rospy.Time.now().to_sec()
         self.flag = -3

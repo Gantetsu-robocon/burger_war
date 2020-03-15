@@ -309,6 +309,7 @@ class main():
         while True:
             if self.index >= len(path):
                 self.received_pose = False
+                self.service_call()
                 break
             else:
                 pose = path[self.index]
@@ -332,6 +333,7 @@ class main():
             if not succeeded:
                 self.ac.cancel_all_goals()
                 self.received_pose = False
+                self.service_call()
                 break
 
             self.index = self.index + 1

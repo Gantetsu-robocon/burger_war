@@ -87,13 +87,11 @@ class PubEnemyPose():
         while not rospy.is_shutdown():
             self.lisn_enemy_camera()
             self.lisn_enemy_lidar()
-            try:
-                self.pub_enemy_abs()
-            except:
-                rospy.logwarn("Publish enemy pose failed")
+            self.pub_enemy_abs()
             rate.sleep()
 
 if __name__ == '__main__':
     rospy.init_node('pub_enemy_abs')
     pub_enemy = PubEnemyPose()
+    rospy.sleep(20)
     pub_enemy.main()

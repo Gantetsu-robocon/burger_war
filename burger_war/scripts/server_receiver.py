@@ -182,6 +182,7 @@ class ServerReceiver(object):
     
     def target_priority_update(self):
         for target_name in self.target_states:
+            point = 0
             #自分自身の的は除外
             if self.side == 'b' and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R"):
                 self.target_states[target_name]["priority"] = -99
@@ -195,7 +196,7 @@ class ServerReceiver(object):
                 #相手がとっている的のポイントは２倍
                 if (self.side == 'b' and self.target_states[target_name]["player"] == 'r') or \
                     (self.side == 'r' and self.target_states[target_name]["player"]=='b'):
-                    point = float(2* self.target_states[target_name]["point"])
+                    point = 2*float(self.target_states[target_name]["point"])
                 else:
                     point = float(self.target_states[target_name]["point"])
                 dist = float(self.target_states[target_name]["distance"])
