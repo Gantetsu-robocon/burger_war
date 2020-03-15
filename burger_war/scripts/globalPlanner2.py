@@ -210,10 +210,10 @@ class GlobalPathPlan(object):
                 area_prev = self.where_am_I([x_prev, y_prev])
                 theta = THETA_DICT[area_prev + area_next]
 
-                x_next = x + 0.1*math.cos(theta)
-                y_next = y + 0.1*math.sin(theta)
-                x_prev = x - 0.1*math.cos(theta)
-                y_prev = y - 0.1*math.sin(theta)
+                x_next = x + 0.05*math.cos(theta)
+                y_next = y + 0.05*math.sin(theta)
+                x_prev = x - 0.05*math.cos(theta)
+                y_prev = y - 0.05*math.sin(theta)
 
                 desired_path.append([x_prev, y_prev, desired_path[-1][2]])
                 desired_path.append([x_prev, y_prev, theta])
