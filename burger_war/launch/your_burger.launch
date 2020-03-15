@@ -10,7 +10,7 @@
       <param name="enemy_distance_th" value="0.50"/> <!--敵との距離が近いか-->
       <param name="time_th" value="150"/> <!--時間が残っているかどうか-->
       <param name="diff_theta_th" value="0.784"/> <!--相手との向き合っているかどうかを判定する角度-->
-      <param name="close_th" value="0.5"/> <!--かなり近い所にマーカーがあるかどうか-->
+      <param name="close_th" value="0.3"/> <!--かなり近い所にマーカーがあるかどうか-->
       <param name="vf_A_dist" value="0.30"/> <!--vf_Aを始める距離-->
       <param name="vf_B_dist" value="0.5"/> <!--vf_Bを始める距離-->
       <param name="current_dir" value= "$(find burger_war)/scripts"/>

@@ -4,14 +4,12 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
         - /Global Map1/Costmap1
         - /Global Map1/Planner1
         - /Local Map1/Polygon1
         - /Local Map1/Planner1
-        - /Enemy_pose1
       Splitter Ratio: 0.700288177
     Tree Height: 815
   - Class: rviz/Selection
@@ -119,13 +117,11 @@ Visualization Manager:
           Value: false
         enemy_0:
           Value: false
-        enemy_1:
-          Value: false
         enemy_2:
           Value: true
         enemy_3:
           Value: true
-        enemy_4:
+        enemy_5:
           Value: true
         enemy_bot/base_footprint:
           Value: false
@@ -170,13 +166,11 @@ Visualization Manager:
         map:
           enemy_0:
             {}
-          enemy_1:
-            {}
           enemy_2:
             {}
           enemy_3:
             {}
-          enemy_4:
+          enemy_5:
             {}
           enemy_camera_abs:
             {}
@@ -364,15 +358,15 @@ Visualization Manager:
       Axes Length: 1
       Axes Radius: 0.100000001
       Class: rviz/Pose
-      Color: 255; 25; 0
+      Color: 170; 170; 255
       Enabled: true
       Head Length: 0.300000012
       Head Radius: 0.100000001
-      Name: Goal
-      Shaft Length: 0.5
+      Name: My_pose
+      Shaft Length: 0.200000003
       Shaft Radius: 0.0500000007
       Shape: Arrow
-      Topic: /move_base/current_goal
+      Topic: /my_pose
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -384,25 +378,10 @@ Visualization Manager:
       Head Length: 0.300000012
       Head Radius: 0.100000001
       Name: Enemy_pose
-      Shaft Length: 0.5
+      Shaft Length: 0.300000012
       Shaft Radius: 0.0500000007
       Shape: Arrow
       Topic: /absolute_pos
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Axes Length: 1
-      Axes Radius: 0.100000001
-      Class: rviz/Pose
-      Color: 170; 170; 255
-      Enabled: true
-      Head Length: 0.300000012
-      Head Radius: 0.100000001
-      Name: My_pose
-      Shaft Length: 0.5
-      Shaft Radius: 0.0500000007
-      Shape: Arrow
-      Topic: /my_pose
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -414,10 +393,25 @@ Visualization Manager:
       Head Length: 0.300000012
       Head Radius: 0.100000001
       Name: Enemy_pose(in priorty)
-      Shaft Length: 0.5
+      Shaft Length: 0.300000012
       Shaft Radius: 0.0500000007
       Shape: Arrow
       Topic: /send_enemy_pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.100000001
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
+      Name: MoveBaseGoal
+      Shaft Length: 0.300000012
+      Shaft Radius: 0.0500000007
+      Shape: Arrow
+      Topic: /move_base/current_goal
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -428,11 +422,11 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.300000012
       Head Radius: 0.100000001
-      Name: Pose
-      Shaft Length: 0.5
+      Name: DesiredGoal
+      Shaft Length: 0.300000012
       Shaft Radius: 0.0500000007
       Shape: Arrow
-      Topic: /desired_pose
+      Topic: /desired_goal
       Unreliable: false
       Value: true
   Enabled: true
@@ -465,11 +459,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 150.864746
+      Scale: 181.186523
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
-      X: -0.201837629
-      Y: 0.070988901
+      X: -0.220725268
+      Y: -0.0972725078
     Saved: ~
 Window Geometry:
   Displays:
@@ -487,5 +481,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 928
-  X: 564
-  Y: 92
+  X: 631
+  Y: 25
