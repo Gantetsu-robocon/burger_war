@@ -220,7 +220,7 @@ class ServerReceiver(object):
         self.lidar_flag = data.data
 
     def lidarDataCallback(self,data):
-        backward_scan = data.ranges[150:210]
+        backward_scan = data.ranges[145:215]
         backward_scan = [x for x in backward_scan if x > 0.1]
         forward_scan = data.ranges[:20]+data.ranges[-20:]
         forward_scan = [x for x in backward_scan if x > 0.1]

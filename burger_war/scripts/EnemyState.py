@@ -164,8 +164,8 @@ class EnemyBot(object):
                     self.diff_p_B_adv = 0.1
                     self.diff_i_B_adv = 0.0
                 twist.linear.x = self.k_p_A_adv*self.diff_p_B_adv + self.k_i_A_adv*self.diff_i_B_adv
-                if math.fabs(self.diff_p_B_rot) > 0.5:
-                    twist.linear.x = 0.0
+                #if math.fabs(self.diff_p_B_rot) > 0.5:
+                #    twist.linear.x = 0.0
                 self.vel_pub.publish(twist)
 
             # 敵が近いときのVF VF of C

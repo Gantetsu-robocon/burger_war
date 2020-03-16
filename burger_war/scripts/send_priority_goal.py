@@ -35,7 +35,8 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
     def __init__(self):
         super(SendPriorityGoal,self).__init__()
         #Get parameter
-        self.enemy_distance_th = rospy.get_param("~enemy_distance_th",0.50)
+        self.enemy_distance_th = rospy.get_param("~enemy_distance_th",0.80)
+        self.enemy_distance_th_small = rospy.get_param("~enemy_distance_th_small",0.50)
         self.enemy_close = rospy.get_param("~enemy_close", 0.2)
         self.escape_distance = rospy.get_param("~escape_distance", 0.6)
         self.time_th = rospy.get_param("~time_th", 150)
@@ -65,7 +66,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         #Velocity dealer
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.vel_sub = rospy.Subscriber('cmd_vel',  Twist, self.velCallback)
-        self.pre_vel_time = 10
+        self.pre_vel_time = rospy.Time.now().to_sec() + 5
 
         self.goal_reached = False
         
@@ -146,6 +147,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
 
             #敵との距離が近いか
             ene_is_near = True if self.enemy_distance() < self.enemy_distance_th else False
+            ene_is_near_small = True if self.enemy_distance() < self.enemy_distance_th_small else False
             #敵との距離が近すぎるか
             ene_is_close = True if self.enemy_distance() < self.enemy_close else False
             #相手が見えているかどうか
@@ -172,6 +174,8 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                     count += 1
             if count <2:
                 self.vf_B_dist = 1.2
+            elif count == 3:
+                self.vf_B_dist = 0.0 # vf しない
             else:
                 self.vf_B_dist = default_vf_B_dist
 
@@ -193,7 +197,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                             break
                         r.sleep()
             
-            elif ene_is_near and self.lidar_flag:
+            elif (ene_is_near and self.lidar_flag) or ene_is_near_small:
                 #相手の方を向く
                 if not pre_state =="vf":
                     if (not pre_state == "turn_to_enemy" ) or update_enemy:
