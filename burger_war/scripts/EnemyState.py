@@ -170,11 +170,7 @@ class EnemyBot(object):
 
             # 敵が近いときのVF VF of C
             if self.VF_change_Flag == 3:
-<<<<<<< Updated upstream
                 twist.linear.x = -1.5
-=======
-                twist.linear.x = -0.19
->>>>>>> Stashed changes
                 if math.fabs(self.AngleEnemy_AR) < 90*3.141592/180:#相手に背を向けないように動こう
                     twist.angular.z = self.k_p_C_rot * self.AngleEnemy_AR*1.0/(180*3.141592/180)
                 else:
