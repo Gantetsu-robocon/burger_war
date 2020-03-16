@@ -2,7 +2,7 @@
 <launch>
   <!-- You can change control program  -->
   <arg name="side" default="r"/> <!-- "b" = blue side, "r" = red side  -->
-
+:burger_war
 
     <node pkg="burger_war" type="send_priority_goal.py" name="send_priority_goal" output="screen">
       <param name="side" value="$(arg side)" />
@@ -13,16 +13,18 @@
       <param name="close_th" value="0.3"/> <!--かなり近い所にマーカーがあるかどうか-->
       <param name="vf_A_dist" value="0.30"/> <!--vf_Aを始める距離-->
       <param name="vf_B_dist" value="0.5"/> <!--vf_Bを始める距離-->
+      <param name="stack" value="3"/> <!--スタックタイム-->
       <param name="current_dir" value= "$(find burger_war)/scripts"/>
     </node>
     
     <node pkg="burger_war" type="globalPlanner2.py" name="globalPlanner" output="screen"/>
-    <node pkg="burger_war" type="randomRun.py" name="randomRun" output="screen"/>
     <!-- localization & navigation -->
     <include file="$(find burger_navigation)/launch/burger_navigation.launch"/>
 
     <!-- Estimate enemy -->
-    <include file="$(find burger_war)/launch/get_enemy.launch"/>      
+    <include file="$(find burger_war)/launch/get_enemy.launch">
+      <arg name = "side" value= "$(arg side)"/>
+    </include>
 
 
     <!-- End of your space  -->

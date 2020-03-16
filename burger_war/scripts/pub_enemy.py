@@ -8,21 +8,19 @@ import tf2_ros
 import tf_conversions
 import tf
 import math 
-from geometry_msgs.msg import PoseStamped 
+from geometry_msgs.msg import PoseStamped , Point
 from geometry_msgs.msg import Quaternion
 from std_msgs.msg      import Int16MultiArray
 from std_msgs.msg      import Bool 
-"""
-import quaternion
 import numpy as np
-"""
+
 class PubEnemyPose():
 
     def __init__(self):
 
         #Get parameter
         self.rate = rospy.get_param("~rate", 1)
-        #self.side = rospy.get_param("~side", "r")
+        self.side = rospy.get_param("~side", "r")
 
         #Transformer, Listener, Subscriber, Publisher
         self.tfBuffer = tf2_ros.Buffer()
@@ -40,10 +38,20 @@ class PubEnemyPose():
         self.flag_color = False
         self.flag_lidar = False
         self.t_camera = PoseStamped()
-        self.t_camera.pose.orientation = (0.0, 0.0, 0.0, 1.0)
         self.t_lidar = PoseStamped()
-        self.t_lidar.pose.orientation = (0.0, 0.0, 0.0, 1.0)
+        if self.side == "r":
+            pose = Point(1.3,0,0)
+            q = tf.transformations.quaternion_from_euler(0,0,np.pi)
+            orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
+        else:
+            pose = Point(-1.3,0,0)
+            q = tf.transformations.quaternion_from_euler(0,0,0)
+            orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
+        self.t_camera.pose.position = pose
+        self.t_camera.pose.orientation = orientation
+        self.t_camera.pose.position = pose
+        self.t_lidar.pose.orientation = orientation
 
     def lisn_enemy_camera(self):
         try:
@@ -64,14 +72,16 @@ class PubEnemyPose():
             self.flag_lidar = False
 
     def pub_enemy_abs(self):
-        msg = PoseStamped()
-        msg.header.frame_id = "map"
         if self.flag_lidar == True:
+            msg = PoseStamped()
+            msg.header.frame_id = "map"
             msg.pose.position = self.t_lidar.pose.position
             msg.pose.orientation = self.t_lidar.pose.orientation
             self.enemy_pub.publish(msg)
             #rospy.loginfo("Publish Lidar pose")
         elif self.flag_color == True:
+            msg = PoseStamped()
+            msg.header.frame_id = "map"
             msg.pose.position = self.t_camera.pose.position
             
             q = self.t_camera.pose.orientation
