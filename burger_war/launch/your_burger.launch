@@ -8,21 +8,25 @@
       <param name="side" value="$(arg side)" />
       <param name="focous_dist" value="0.30"/> <!--マーカー撮影位置のオフセット（特定のマーカーのみ）-->
       <param name="enemy_distance_th" value="0.80"/> <!--敵との距離が近いか-->
+      <param name="enemy_close" value="0.30"/> <!--敵との距離が近すぎないか-->
+      <param name="escape_distance" value="0.7"/> <!--敵との距離が近すぎないか-->
       <param name="time_th" value="150"/> <!--時間が残っているかどうか-->
       <param name="diff_theta_th" value="0.3927"/> <!--相手との向き合っているかどうかを判定する角度-->
       <param name="close_th" value="0.3"/> <!--かなり近い所にマーカーがあるかどうか-->
       <param name="vf_A_dist" value="0.30"/> <!--vf_Aを始める距離-->
       <param name="vf_B_dist" value="0.5"/> <!--vf_Bを始める距離-->
+      <param name="stack" value="3"/> <!--スタックタイム-->
       <param name="current_dir" value= "$(find burger_war)/scripts"/>
     </node>
     
     <node pkg="burger_war" type="globalPlanner2.py" name="globalPlanner" output="screen"/>
-    <node pkg="burger_war" type="randomRun.py" name="randomRun" output="screen"/>
     <!-- localization & navigation -->
     <include file="$(find burger_navigation)/launch/burger_navigation.launch"/>
 
     <!-- Estimate enemy -->
-    <include file="$(find burger_war)/launch/get_enemy.launch"/>      
+    <include file="$(find burger_war)/launch/get_enemy.launch">
+      <arg name = "side" value= "$(arg side)"/>
+    </include>
 
 
     <!-- End of your space  -->

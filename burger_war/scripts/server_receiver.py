@@ -13,6 +13,7 @@ from geometry_msgs.msg import PoseStamped, Quaternion
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String, Int16MultiArray, Int8, Bool
+from sensor_msgs.msg import LaserScan
 
 class Target(object):
     def __init__(self,position):
@@ -80,6 +81,7 @@ class ServerReceiver(object):
         self.color_flag = [0,0,0,0,0,0]
         self.lidar_flag = False
         self.succeeded_goal = False
+        self.near_backwall = False
 
         #Publisher
         self.enemy_pose_pub = rospy.Publisher("send_enemy_pose", PoseStamped, queue_size=1)
@@ -93,6 +95,7 @@ class ServerReceiver(object):
         self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped,self.myposeCallback)
         self.color_flag_sub = rospy.Subscriber('color_flag_time',Int16MultiArray, self.colorCallback)
         self.lidar_flag_sub = rospy.Subscriber('lidar_flag',Bool, self.lidarCallback)
+        self.lidar_sub = rospy.Subscriber('scan', LaserScan, self.lidarDataCallback)
 
     #Update target information
     def target_pose_update(self):
@@ -116,53 +119,29 @@ class ServerReceiver(object):
         if self.side == "r":
             self.target_states["BL_L"]["pose"] = [pose_e.x-(0.07)*np.sin(th_e),
                 pose_e.y+(0.07)*np.cos(th_e), th_e-np.pi/2]
-                #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
-                #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
             self.target_states["BL_R"]["pose"] = [pose_e.x+(0.07)*np.sin(th_e),
                 pose_e.y-(0.07)*np.cos(th_e), th_e+np.pi/2]
-                #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
-                #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1)*np.cos(th_e),
                 pose_e.y-(0.1)*np.sin(th_e), th_e]
-                #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
-                #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
             self.target_states["RE_L"]["pose"] = [pose_m.x-(0.07)*np.sin(th_m),
                 pose_m.y+(0.07)*np.cos(th_m), th_m-np.pi/2]
-            #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
-            #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
             self.target_states["RE_R"]["pose"] = [pose_m.x+(0.07)*np.sin(th_m),
                 pose_m.y-(0.07)*np.cos(th_m), th_m+np.pi/2]
-            #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
-            #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["RE_B"]["pose"] = [pose_m.x-(0.1)*np.cos(th_m),
                 pose_m.y-(0.1)*np.sin(th_m), th_m]
-            #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
-            #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
         elif self.side == "b":
             self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07)*np.sin(th_e),
                 pose_e.y+(0.07)*np.cos(th_e), th_e-np.pi/2]
-            #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
-            #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
             self.target_states["RE_R"]["pose"] = [pose_e.x+(0.07)*np.sin(th_e),
                 pose_e.y-(0.07)*np.cos(th_e), th_e+np.pi/2]
-            #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
-            #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1)*np.cos(th_e),
                 pose_e.y-(0.1)*np.sin(th_e), th_e]
-            #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
-            #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
             self.target_states["BL_L"]["pose"] = [pose_m.x-(0.07)*np.sin(th_m),
                 pose_m.y+(0.07)*np.cos(th_m), th_m-np.pi/2]
-                #[pose_e.x-(0.07+self.focus_dist)*np.sin(th_e),
-                #pose_e.y+(0.07+self.focus_dist)*np.cos(th_e), th_e-np.pi/2]
             self.target_states["BL_R"]["pose"] = [pose_m.x+(0.07)*np.sin(th_m),
                 pose_m.y-(0.07)*np.cos(th_m), th_m+np.pi/2]
-                #[pose_e.x+(0.07+self.focus_dist)*np.sin(th_e),
-                #pose_e.y-(0.07+self.focus_dist)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["BL_B"]["pose"] = [pose_m.x-(0.1)*np.cos(th_m),
                 pose_m.y-(0.1)*np.sin(th_m), th_m]
-                #[pose_e.x-(0.1+self.focus_dist)*np.cos(th_e),
-                #pose_e.y-(0.1+self.focus_dist)*np.sin(th_e), th_e]
 
     def target_player_update(self,target_data):
         for info in target_data:
@@ -208,7 +187,6 @@ class ServerReceiver(object):
     # 相手が最後にとった的を保存
     def last_enemy_target(self):
         for target_name in self.target_states:
-            #print self.target_states[target_name]["player"], self.target_states_pre[target_name]["player"]
             if self.target_states[target_name]["player"] != self.target_states_pre[target_name]["player"]:
                 if self.target_states[target_name]["player"] == self.enemy_side:
                     self.last_target.name = target_name
@@ -243,6 +221,20 @@ class ServerReceiver(object):
     
     def lidarCallback(self, data):
         self.lidar_flag = data
+
+    def lidarDataCallback(self,data):
+        backward_scan = data.ranges[150:210]
+        backward_scan = [x for x in backward_scan if x > 0.1]
+        forward_scan = data.ranges[:10]+data.ranges[-10:]
+        forward_scan = [x for x in backward_scan if x > 0.1]
+        if min(backward_scan) < 0.27:
+            self.near_backwall = True
+        else:
+            self.near_backwall = False
+        if min(forward_scan) < 0.20:
+            self.near_frontwall = True
+        else:
+            self.near_frontwall = False
 
     #Get target
     def top_priority_target(self):
