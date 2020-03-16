@@ -36,9 +36,9 @@ class EnemyBot(object):
         self.k_i_A_rot = 0.0 #iゲイン
         self.k_p_A_adv = 0.5 #pゲイン
         self.k_i_A_adv = 0.0 #iゲイン
-        self.k_p_B_rot = 2.0 #pゲイン
+        self.k_p_B_rot = 3.0 #pゲイン
         self.k_i_B_rot = 0.5 #iゲイン
-        self.k_p_B_adv = 1.5 #pゲイン
+        self.k_p_B_adv = 0.3 #pゲイン
         self.k_i_B_adv = 0.0 #iゲイン
         self.k_p_C_rot = 0.5 #0.2 #pゲイン
 
@@ -164,13 +164,17 @@ class EnemyBot(object):
                     self.diff_p_B_adv = 0.1
                     self.diff_i_B_adv = 0.0
                 twist.linear.x = self.k_p_A_adv*self.diff_p_B_adv + self.k_i_A_adv*self.diff_i_B_adv
-                #if math.fabs(self.diff_p_B_rot) > 0.5:
-                #    twist.linear.x = 0.0
+                if math.fabs(self.diff_p_B_rot) > 0.5:
+                    twist.linear.x = 0.0
                 self.vel_pub.publish(twist)
 
             # 敵が近いときのVF VF of C
             if self.VF_change_Flag == 3:
+<<<<<<< Updated upstream
                 twist.linear.x = -1.5
+=======
+                twist.linear.x = -0.19
+>>>>>>> Stashed changes
                 if math.fabs(self.AngleEnemy_AR) < 90*3.141592/180:#相手に背を向けないように動こう
                     twist.angular.z = self.k_p_C_rot * self.AngleEnemy_AR*1.0/(180*3.141592/180)
                 else:

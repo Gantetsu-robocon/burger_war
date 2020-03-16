@@ -8,7 +8,7 @@
       <param name="side" value="$(arg side)" />
       <param name="focous_dist" value="0.30"/> <!--マーカー撮影位置のオフセット（特定のマーカーのみ）-->
       <param name="enemy_distance_th" value="0.80"/> <!--敵との距離が近いか-->
-      <param name="enemy_distance_th_small" value="0.50"/> <!--敵との距離が近いか-->
+      <param name="enemy_distance_th_small" value="0.40"/> <!--敵との距離が近いか-->
       <param name="enemy_close" value="0.32"/> <!--敵との距離が近すぎないか-->
       <param name="escape_distance" value="0.7"/> <!--敵との距離が近すぎないか-->
       <param name="update_ememy_time" value="1.0"/> <!--敵の目標位置のupdate時間-->
