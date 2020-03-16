@@ -40,7 +40,7 @@ class EnemyBot(object):
         self.k_i_B_rot = 0.5 #iゲイン
         self.k_p_B_adv = 1.5 #pゲイン
         self.k_i_B_adv = 0.0 #iゲイン
-        self.k_p_C_rot = 0.2 #pゲイン
+        self.k_p_C_rot = 0.5 #0.2 #pゲイン
 
         self.diff_p_A_rot = 0
         self.diff_p_B_rot = 0
@@ -170,7 +170,7 @@ class EnemyBot(object):
 
             # 敵が近いときのVF VF of C
             if self.VF_change_Flag == 3:
-                twist.linear.x = -0.7
+                twist.linear.x = -1.5
                 if math.fabs(self.AngleEnemy_AR) < 90*3.141592/180:#相手に背を向けないように動こう
                     twist.angular.z = self.k_p_C_rot * self.AngleEnemy_AR*1.0/(180*3.141592/180)
                 else:
