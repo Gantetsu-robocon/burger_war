@@ -65,7 +65,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         #Velocity dealer
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.vel_sub = rospy.Subscriber('cmd_vel',  Twist, self.velCallback)
-        self.pre_vel_time = 10
+        self.pre_vel_time = 12
 
         self.goal_reached = False
         
