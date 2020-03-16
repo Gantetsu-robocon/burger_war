@@ -82,9 +82,17 @@ class ServerReceiver(object):
         self.lidar_flag = False
         self.succeeded_goal = False
         self.near_backwall = False
+        self.enemy_lost = False
 
         #Publisher
         self.enemy_pose_pub = rospy.Publisher("send_enemy_pose", PoseStamped, queue_size=1)
+
+        if self.side == "r":
+            self.enemy_target = ["BL_B","BL_R","BL_L"]
+            self.my_target = ["RE_B","RE_R","RE_L"]
+        else:
+            self.enemy_target = ["RE_B","RE_R","RE_L"]
+            self.my_target = ["BL_B","BL_R","BL_L"]
 
         self.target_pose_update()
         self.target_distance_update()
@@ -110,12 +118,6 @@ class ServerReceiver(object):
         th_e = e_e[2]
         pose_e = self.enemy_pose.pose.position
 
-        #自分の（x,y,th）を持ってくる
-        q_m = self.my_pose.pose.orientation
-        e_m = tf.transformations.euler_from_quaternion((q_m.x,q_m.y,q_m.z,q_m.w))
-        th_m = e_m[2]
-        pose_m = self.my_pose.pose.position
-        self.diff_theta = th_e - th_m
         if self.side == "r":
             self.target_states["BL_L"]["pose"] = [pose_e.x-(0.07)*np.sin(th_e),
                 pose_e.y+(0.07)*np.cos(th_e), th_e-np.pi/2]
@@ -123,12 +125,6 @@ class ServerReceiver(object):
                 pose_e.y-(0.07)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["BL_B"]["pose"] = [pose_e.x-(0.1)*np.cos(th_e),
                 pose_e.y-(0.1)*np.sin(th_e), th_e]
-            self.target_states["RE_L"]["pose"] = [pose_m.x-(0.07)*np.sin(th_m),
-                pose_m.y+(0.07)*np.cos(th_m), th_m-np.pi/2]
-            self.target_states["RE_R"]["pose"] = [pose_m.x+(0.07)*np.sin(th_m),
-                pose_m.y-(0.07)*np.cos(th_m), th_m+np.pi/2]
-            self.target_states["RE_B"]["pose"] = [pose_m.x-(0.1)*np.cos(th_m),
-                pose_m.y-(0.1)*np.sin(th_m), th_m]
         elif self.side == "b":
             self.target_states["RE_L"]["pose"] = [pose_e.x-(0.07)*np.sin(th_e),
                 pose_e.y+(0.07)*np.cos(th_e), th_e-np.pi/2]
@@ -136,12 +132,6 @@ class ServerReceiver(object):
                 pose_e.y-(0.07)*np.cos(th_e), th_e+np.pi/2]
             self.target_states["RE_B"]["pose"] = [pose_e.x-(0.1)*np.cos(th_e),
                 pose_e.y-(0.1)*np.sin(th_e), th_e]
-            self.target_states["BL_L"]["pose"] = [pose_m.x-(0.07)*np.sin(th_m),
-                pose_m.y+(0.07)*np.cos(th_m), th_m-np.pi/2]
-            self.target_states["BL_R"]["pose"] = [pose_m.x+(0.07)*np.sin(th_m),
-                pose_m.y-(0.07)*np.cos(th_m), th_m+np.pi/2]
-            self.target_states["BL_B"]["pose"] = [pose_m.x-(0.1)*np.cos(th_m),
-                pose_m.y-(0.1)*np.sin(th_m), th_m]
 
     def target_player_update(self,target_data):
         for info in target_data:
@@ -153,9 +143,10 @@ class ServerReceiver(object):
     def target_distance_update(self):
         for target_name in self.target_states:
             #自分自身の的は除外
-            if self.side == 'b' and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R"):
+            if target_name in self.my_target:
                 self.target_states[target_name]["distance"] = 99
-            elif self.side == 'r' and (target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
+            #敵を見失っているときは除外
+            if target_name in self.enemy_target and self.enemy_lost:
                 self.target_states[target_name]["distance"] = 99
             #他の的は距離を算出
             else:
@@ -165,13 +156,14 @@ class ServerReceiver(object):
         for target_name in self.target_states:
             point = 0
             #自分自身の的は除外
-            if self.side == 'b' and (target_name=="BL_B" or target_name=="BL_L" or target_name=="BL_R"):
-                self.target_states[target_name]["priority"] = -99
-            elif self.side == 'r' and (target_name=="RE_B" or target_name=="RE_L" or target_name=="RE_R"):
+            if target_name in self.my_target:
                 self.target_states[target_name]["priority"] = -99
             #自分自身がとった的は除外
             elif (self.side == 'b' and self.target_states[target_name]["player"] == 'b') or \
                 (self.side == 'r' and self.target_states[target_name]["player"]=='r'):
+                self.target_states[target_name]["priority"] = -99
+            #敵を見失っているときは除外
+            elif self.enemy_lost and target_name in self.enemy_target:
                 self.target_states[target_name]["priority"] = -99
             else:
                 #相手がとっている的のポイントは２倍
@@ -208,11 +200,16 @@ class ServerReceiver(object):
 
     def enemyposeCallback(self, pose):
         self.enemy_pose = pose
-        if ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0) and (self.color_flag[5] < self.last_target.time) and (self.lidar_flag==False):
-            self.enemy_pose.pose.position.x = self.last_target.position[0]
-            self.enemy_pose.pose.position.y = self.last_target.position[1]
-            q = tf.transformations.quaternion_from_euler(0.0, 0.0, self.last_target.position[2])
-            self.enemy_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
+        if not ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0 and (self.lidar_flag==False)):
+            #敵が見える
+            self.enemy_catch_time = rospy.Time.now().to_sec()
+            self.enemy_lost = False
+        else:
+            #敵が一切見えない
+            diff_time = rospy.Time.now().to_sec()- self.enemy_catch_time
+            if diff_time > 10.0:
+                #一定時間以上敵が見えない
+                self.enemy_lost = True
         self.target_pose_update()
         self.target_distance_update()
 
@@ -220,14 +217,14 @@ class ServerReceiver(object):
         self.color_flag = array.data
     
     def lidarCallback(self, data):
-        self.lidar_flag = data
+        self.lidar_flag = data.data
 
     def lidarDataCallback(self,data):
         backward_scan = data.ranges[150:210]
         backward_scan = [x for x in backward_scan if x > 0.1]
-        forward_scan = data.ranges[:10]+data.ranges[-10:]
+        forward_scan = data.ranges[:20]+data.ranges[-20:]
         forward_scan = [x for x in backward_scan if x > 0.1]
-        if min(backward_scan) < 0.27:
+        if min(backward_scan) < 0.26:
             self.near_backwall = True
         else:
             self.near_backwall = False

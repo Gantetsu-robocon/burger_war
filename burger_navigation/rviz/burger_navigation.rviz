@@ -115,13 +115,9 @@ Visualization Manager:
           Value: false
         caster_back_link:
           Value: false
-        enemy_0:
-          Value: false
         enemy_2:
           Value: true
         enemy_3:
-          Value: true
-        enemy_5:
           Value: true
         enemy_bot/base_footprint:
           Value: false
@@ -164,13 +160,9 @@ Visualization Manager:
       Show Names: false
       Tree:
         map:
-          enemy_0:
-            {}
           enemy_2:
             {}
           enemy_3:
-            {}
-          enemy_5:
             {}
           enemy_camera_abs:
             {}
@@ -344,7 +336,7 @@ Visualization Manager:
       Axes Radius: 0.00999999978
       Class: rviz/PoseArray
       Color: 0; 192; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.0700000003
       Head Radius: 0.0299999993
       Name: Amcl Particles
@@ -353,7 +345,7 @@ Visualization Manager:
       Shape: Arrow (Flat)
       Topic: /particlecloud
       Unreliable: false
-      Value: true
+      Value: false
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.100000001
