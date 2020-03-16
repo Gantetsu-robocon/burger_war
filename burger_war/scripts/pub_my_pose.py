@@ -41,7 +41,7 @@ class PubEnemyPose():
             try:
                 t = self.tfBuffer.lookup_transform('map', 'base_footprint', rospy.Time(0), rospy.Duration(1.0))
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                rospy.logerr('LookupTransform Eroor my pose !')
+                #rospy.logerr('LookupTransform Eroor my pose !')
                 rate.sleep()
                 continue
             self.my_ps.pose.position = t.transform.translation
