@@ -223,7 +223,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 #条件がそろえばvf
                 pre_state = self.vf(pre_state,target)
 
-            elif in_time and no_marker_close:
+            elif in_time and no_marker_close and (not count==3):
                 #最も点数の高い的を取りに行く
                 if not pre_state =="vf":
                     if (not pre_state == "get_highest_marker" ) or update_enemy:

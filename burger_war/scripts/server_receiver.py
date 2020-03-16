@@ -166,12 +166,7 @@ class ServerReceiver(object):
             elif self.enemy_lost and target_name in self.enemy_target:
                 self.target_states[target_name]["priority"] = -99
             else:
-                #相手がとっている的のポイントは２倍
-                if (self.side == 'b' and self.target_states[target_name]["player"] == 'r') or \
-                    (self.side == 'r' and self.target_states[target_name]["player"]=='b'):
-                    point = 2*float(self.target_states[target_name]["point"])
-                else:
-                    point = float(self.target_states[target_name]["point"])
+                point = float(self.target_states[target_name]["point"])
                 dist = float(self.target_states[target_name]["distance"])
                 #優先度
                 self.target_states[target_name]["priority"] = point
