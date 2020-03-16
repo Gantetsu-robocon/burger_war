@@ -193,7 +193,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                             break
                         r.sleep()
             
-            elif ene_is_near:
+            elif ene_is_near and self.lidar_flag:
                 #相手の方を向く
                 if not pre_state =="vf":
                     if (not pre_state == "turn_to_enemy" ) or update_enemy:
