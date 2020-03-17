@@ -13,8 +13,8 @@
       <param name="escape_distance" value="0.7"/> <!--敵との距離が近すぎないか-->
       <param name="update_ememy_time" value="1.0"/> <!--敵の目標位置のupdate時間-->
       <param name="time_th" value="150"/> <!--時間が残っているかどうか-->
-      <param name="close_th" value="0.30"/> <!--かなり近い所にマーカーがあるかどうか-->
-      <param name="vf_B_dist" value="0.5"/> <!--vf_Bを始める距離-->
+      <param name="close_th" value="0.50"/> <!--0.3かなり近い所にマーカーがあるかどうか-->
+      <param name="vf_B_dist" value="0.20"/> <!--0.5vf_Bを始める距離  0.2yosage-->
       <param name="stack" value="3"/> <!--スタックタイム-->
       <param name="current_dir" value= "$(find burger_war)/scripts"/>
     </node>
