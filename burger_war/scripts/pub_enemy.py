@@ -83,11 +83,7 @@ class PubEnemyPose():
             msg = PoseStamped()
             msg.header.frame_id = "map"
             msg.pose.position = self.t_camera.pose.position
-            
-            q = self.t_camera.pose.orientation
-            msg.pose.orientation = Quaternion(q[3],q[4],q[5],q[6])
-            
-            #msg.pose.orientation = self.t_camera.pose.orientation
+            msg.pose.orientation = self.t_camera.pose.orientation
             self.enemy_pub.publish(msg)
             #rospy.loginfo("Publish Camera pose")
 

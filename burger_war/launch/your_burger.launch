@@ -6,7 +6,7 @@
 
     <node pkg="burger_war" type="send_priority_goal.py" name="send_priority_goal" output="screen">
       <param name="side" value="$(arg side)" />
-      <param name="focous_dist" value="0.10"/> <!--マーカー撮影位置のオフセット（特定のマーカーのみ）-->
+      <param name="focous_dist" value="0.20"/> <!--マーカー撮影位置のオフセット 0.10（特定のマーカーのみ）-->
       <param name="enemy_distance_th" value="0.80"/> <!--敵との距離が近いか0.80-->
       <param name="time_th" value="0"/> <!--時間が残っているかどうか-->
       <param name="diff_theta_th" value="0.3927"/> <!--相手との向き合っているかどうかを判定する角度-->
