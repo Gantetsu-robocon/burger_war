@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="side" default="r"/>
-  <arg name="rate" default="8"/> <!-- rate = control rate -->
+  <arg name="rate" default="5"/> <!-- rate = control rate -->
   <arg name="robot_name" default=""/>
 
   <!-- Estimate enemy position by canera -->
