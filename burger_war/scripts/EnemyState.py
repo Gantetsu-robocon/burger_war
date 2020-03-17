@@ -41,6 +41,7 @@ class EnemyBot(object):
         self.k_p_B_adv = 0.3 #pゲイン
         self.k_i_B_adv = 0.0 #iゲイン
         self.k_p_C_rot = 0.5 #0.2 #pゲイン
+        self.k_p_turn = 0.5 #pゲイン
 
         self.diff_p_A_rot = 0
         self.diff_p_B_rot = 0
@@ -103,6 +104,8 @@ class EnemyBot(object):
             self.bridge = CvBridge()
             self.target_id_sub = rospy.Subscriber('target_id', MarkerArray, self.targetIdCallback)
             self.image_sub = rospy.Subscriber('image_raw', Image, self.imageCallback)
+            self.my_pose_sub = rospy.Subscriber('my_pose',PoseStamped, self.myposeCallback)
+            self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped, self.enemyposeCallback)
             #self.vf_flag_pub =rospy.Subscriber('/vf_flag', Int8, self.VFFlagCallback)
             
     def strategy(self):
@@ -176,6 +179,22 @@ class EnemyBot(object):
                 else:
                     twist.angular.z = 0.0
                 self.vel_pub.publish(twist)
+
+            #相手の方向を向く
+            if self.VF_change_Flag == 4:
+                twist.linear.x = 0
+                target_th = math.atan2(self.enemy_pose.position.y-self.my_pose.position.y,
+                                self.enemy_pose.position.x-self.my_pose.position.x)
+                q = self.my_pose.orientation
+                euler = tf.transformations.euler_from_quaternion((q.x,q.y,q.z,q.w))
+                th = euler[2]
+                diff = target_th - th
+                if diff > math.pi:
+                    diff -= math.pi
+                elif diff < -math.pi:
+                    diff += math.pi
+                twist.angular.z = self.k_p_turn*diff
+                self.vel_pub.publish(twist)
 ###########################################################################
 
             # 相対位置・向きのpublish
@@ -208,6 +227,12 @@ class EnemyBot(object):
             self.color_flag_pub.publish(ColorFlag_forPublish)
 
             r.sleep()
+
+    def myposeCallback(self,pose):
+        self.my_pose = pose.pose
+
+    def enemyposeCallback(self,pose):
+        self.enemy_pose = pose.pose
 
     # target_IDを取得
     def targetIdCallback(self, data):
