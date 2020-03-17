@@ -181,7 +181,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
 
             vel_time_diff = rospy.Time.now().to_sec() - self.pre_vel_time
             
-            if (ene_is_close and find_enemy) or vel_time_diff > self.stack_time: 
+            if (ene_is_close and find_enemy) or vel_time_diff > self.stack_time or self.color_flag[3]: 
                 #回避
                 if not pre_state =="escape":
                     self.stop_sending()
@@ -202,6 +202,8 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 if not pre_state =="vf":
                     if (not pre_state == "turn_to_enemy" ) or update_enemy:
                         self.stop_sending()
+                        self.vf_flag_call(Int8(data=4))
+                        """
                         th = math.atan2(self.enemy_pose.pose.position.y-self.my_pose.pose.position.y,
                                         self.enemy_pose.pose.position.x-self.my_pose.pose.position.x)
                         x = self.my_pose.pose.position.x
@@ -215,6 +217,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                         goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
                         self.ac.send_goal(goal)
                         send_time = rospy.Time.now().to_sec()
+                        """
                         pre_state = "turn_to_enemy"
                         print ""
                         print "【state】:",pre_state
@@ -223,7 +226,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 #条件がそろえばvf
                 pre_state = self.vf(pre_state,target)
 
-            elif in_time and no_marker_close:
+            elif in_time and no_marker_close and (not count==3):
                 #最も点数の高い的を取りに行く
                 if not pre_state =="vf":
                     if (not pre_state == "get_highest_marker" ) or update_enemy:
