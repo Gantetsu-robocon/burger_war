@@ -80,13 +80,13 @@ class EnemyDetector:
 
     def is_point_emnemy(self, point_x, point_y):
         #フィールド内かチェック
-        if   point_y > (-point_x + 1.55):
+        if   point_y > (-point_x + 1.54):
             return False
-        elif point_y < (-point_x - 1.55):
+        elif point_y < (-point_x - 1.54):
             return False
-        elif point_y > ( point_x + 1.55):
+        elif point_y > ( point_x + 1.54):
             return False
-        elif point_y < ( point_x - 1.55):
+        elif point_y < ( point_x - 1.54):
             return False
 
         #フィールド内の物体でないかチェック

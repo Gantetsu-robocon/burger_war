@@ -19,7 +19,7 @@ class PubEnemyPose():
     def __init__(self):
 
         #Get parameter
-        self.rate = rospy.get_param("~rate", 1)
+        self.rate = rospy.get_param("~rate", 5)
         self.side = rospy.get_param("~side", "r")
 
         #Transformer, Listener, Subscriber, Publisher
