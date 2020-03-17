@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="side" default="r"/>
-  <arg name="rate" default="5"/> <!-- rate = control rate -->
+  <arg name="rate" default="8"/> <!-- rate = control rate -->
   <arg name="robot_name" default=""/>
 
   <!-- Estimate enemy position by canera -->
     <node pkg="burger_war" type="EnemyState.py" name="relative_enemy_camera" output="log">
-      <param name="rate" value="5"/>
+      <param name="rate" value="10"/>
       <param name="resize_rate" value="0.8"/> <!-- 0 〜 1 -->
     </node>
     <node pkg="burger_war" type="enemy_detector_camera.py" name="enemy_detector_camera" output="log">
