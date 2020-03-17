@@ -6,10 +6,12 @@ from heapq import heappop, heappush
 
 import actionlib
 import numpy as np
+import time
 import rospy
 import tf
 from geometry_msgs.msg import (PoseStamped, PoseWithCovarianceStamped,
                                Quaternion)
+from actionlib_msgs.msg import GoalStatusArray
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
@@ -196,7 +198,7 @@ class GlobalPathPlan(object):
             if num == 0:
                 desired_path.append([self.start[0], self.start[1], self.calc_angle(self.start, self.pos[path[i+1]])])
             elif num == 9:
-                desired_path.append([self.goal[0], self.goal[1], self.calc_angle(self.pos[path[i-1]], self.goal)])
+                # desired_path.append([self.goal[0], self.goal[1], self.calc_angle(self.pos[path[i-1]], self.goal)])
                 desired_path.append(self.goal)
             else:
                 x = self.pos[num][0]
@@ -255,44 +257,40 @@ class GlobalPathPlan(object):
         return desired_path
 
 
-class main():
+class move():
     def __init__(self):
         # Initialize
-        rospy.init_node('global_path_planner')
         self.ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         self.ac.wait_for_server()
 
         # Subscriber
         self.odom_sub = rospy.Subscriber('odom', Odometry, self.odomCallback)
+        self.move_base_status_sub = rospy.Subscriber('/move_base/status', GoalStatusArray, self.movebaseCallback)
         
-        # When use service
+        # Service
         self.desired_pose_srv = rospy.Service("desired_pose", DesiredPose, self.desiredPoseCallback)
         self.reset_pathplan_sub = rospy.Service('reset_pathplan', Empty, self.resetPathplanCallback)
         rospy.wait_for_service("pathplan_succeeded")
         self.service_call = rospy.ServiceProxy("pathplan_succeeded", Empty)
 
-        # When use topic
-        #self.desired_pose_sub = rospy.Subscriber('desired_pose', PoseStamped, self.desiredPoseCallback)
-        #self.reset_pathplan_sub = rospy.Subscriber('reset_pathplan', String, self.resetPathplanCallback)
-        #self.succeeded_pub = rospy.Publisher('pathplan_succeeded', String, queue_size=1)
-
         self.desired_pose = PoseStamped()
         self.current_pose = PoseStamped()
         self.index = 0
-        self.path = [[0, 0, 0]]
-        
-        self.received_pose = False
+        self.path = None
+        self.pathlength = 1
+        self.pose_send = None
+        self.status = 0
 
     def desiredPoseCallback(self, data):
-        self.received_pose = True
-
-        if self.desired_pose == data.goal:
-            return DesiredPoseResponse(True)
+        if self.desired_pose.pose.position.x == data.goal.pose.position.x \
+           and self.desired_pose.pose.position.y == data.goal.pose.position.y \
+           and self.desired_pose.pose.orientation.w == data.goal.pose.orientation.w:
+            return DesiredPoseResponse()
             
         self.ac.cancel_all_goals()
-        self.index = 0
-        self.desired_pose = data.goal
 
+        ## Calculate new path
+        self.desired_pose = data.goal
         start_pos = [self.current_pose.pose.position.y,
                      -self.current_pose.pose.position.x,
                      0]
@@ -304,54 +302,58 @@ class main():
 
         pathplanner = GlobalPathPlan(start_pos, goal_pos)
         self.path = pathplanner.searchPath()
+        self.index = 0
+        self.pathlength = len(self.path)-1
 
-        return DesiredPoseResponse(True)
+        return DesiredPoseResponse()
+
 
     def sendDesiredPose(self):
+        if self.path == None:
+            return
+
+        # if self.index > self.pathlength:
+        #     self.index = self.pathlength
+
+        pose = self.path[self.index]
+        # if self.pose_send == pose:
+        #     return
+
+        ## Send next pos
         self.goal = MoveBaseGoal()
         self.goal.target_pose.header.frame_id = 'map'
         self.goal.target_pose.header.stamp = rospy.Time.now()
-
-        if self.index >= len(self.path):
-            self.received_pose = False
-            self.service_call()
-            return 0
-        else:
-            pose = self.path[self.index]
-
-        ## Send next pos
         self.goal.target_pose.pose.position.x =  pose[0]
         self.goal.target_pose.pose.position.y =  pose[1]
         q = tf.transformations.quaternion_from_euler(0, 0, pose[2])
         self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
+        self.ac.cancel_all_goals()
         self.ac.send_goal(self.goal)
-        ## -------------
-        
-        succeeded = self.ac.wait_for_result(rospy.Duration(20))
-            
-        # state = self.ac.get_state()
+        self.pose_send = pose
 
-        if succeeded and self.index == len(self.path)-1:
-            self.furifuri(pose)
-            #self.succeeded_pub.publish('succeeded')
-            self.service_call()
-            return 0
-        if not succeeded:
-            self.ac.cancel_all_goals()
-            self.received_pose = False
-            self.service_call()
-            return 0 
+        succeeded = self.ac.wait_for_result(rospy.Duration(10))
 
-        self.index = self.index + 1
-            
+        if succeeded and self.index == self.pathlength:
+            self.furifuri(self.path[-1])
+            try:
+                self.service_call()
+            except rospy.ServiceException, e:
+                print ("Service call failed: %s" % e)
+            return
+        elif succeeded:
+            self.index = self.index + 1
+
 
     def odomCallback(self, data):
         self.current_pose = data.pose
+
+    def movebaseCallback(self, data):
+        if len(data.status_list) > 0:
+            self.status = data.status_list[0].status
     
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
-        self.index = 0
-        self.received_pose = False
+        self.path = None
         return EmptyResponse()
 
     def furifuri(self, pose):
@@ -364,11 +366,11 @@ class main():
         self.ac.send_goal(self.goal)
         self.ac.wait_for_result(rospy.Duration(2))
 
-
 if __name__ == '__main__':
-    main = main()
+    rospy.init_node('global_path_planner')
+    mymove = move()
     r = rospy.Rate(1)
     while not rospy.is_shutdown():
-        if main.received_pose:
-            main.sendDesiredPose()
-            r.sleep()
+        mymove.sendDesiredPose()
+        r.sleep()
+
