@@ -219,7 +219,7 @@ class ServerReceiver(object):
         backward_scan = [x for x in backward_scan if x > 0.1]
         forward_scan = data.ranges[:20]+data.ranges[-20:]
         forward_scan = [x for x in backward_scan if x > 0.1]
-        if min(backward_scan) < 0.28:
+        if min(backward_scan) < 0.3:
             self.near_backwall = True
         else:
             self.near_backwall = False

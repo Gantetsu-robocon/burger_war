@@ -36,12 +36,20 @@ class EnemyBot(object):
         self.k_i_A_rot = 0.0 #iゲイン
         self.k_p_A_adv = 0.5 #pゲイン
         self.k_i_A_adv = 0.0 #iゲイン
+<<<<<<< HEAD
         self.k_p_B_rot = 4.0 #pゲイン 2.0
+=======
+        self.k_p_B_rot = 3.0 #pゲイン
+>>>>>>> bd7a5503101f2e7efb38c085d773fdd24d8c647a
         self.k_i_B_rot = 0.5 #iゲイン
         self.k_p_B_adv = 0.3 #pゲイン
         self.k_i_B_adv = 0.0 #iゲイン
         self.k_p_C_rot = 0.5 #0.2 #pゲイン
+<<<<<<< HEAD
         self.k_p_turn = 1 #0.5pゲイン
+=======
+        self.k_p_turn = 1.0 #pゲイン
+>>>>>>> bd7a5503101f2e7efb38c085d773fdd24d8c647a
 
         self.diff_p_A_rot = 0
         self.diff_p_B_rot = 0
