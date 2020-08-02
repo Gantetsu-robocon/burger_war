@@ -9,7 +9,7 @@ import copy
 import numpy as np
 
 #Import ROS message type
-from geometry_msgs.msg import PoseStamped, Quaternion
+from geometry_msgs.msg import PoseStamped, Quaternion, Point
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String, Int16MultiArray, Int8, Bool
@@ -46,31 +46,24 @@ class ServerReceiver(object):
         self.enemy_pose = PoseStamped()
         self.my_pose = PoseStamped()
         if self.side == "r":
-            self.enemy_pose.pose.position.x = 1.3
-            self.enemy_pose.pose.position.y = 0 
-            self.enemy_pose.pose.position.z = 0 
+
+            self.enemy_pose.pose.position = Point(1.3,0,0)
             q = tf.transformations.quaternion_from_euler(0,0,np.pi)
             self.enemy_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
-            self.my_pose.pose.position.x = -1.3
-            self.my_pose.pose.position.y = 0
-            self.my_pose.pose.position.z = 0 
+            self.enemy_pose.pose.position = Point(-1.3,0,0)
             q = tf.transformations.quaternion_from_euler(0,0,0)
             self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
             self.last_target = Target([1.3,0,np.pi])
 
-        elif self.side == "b":
+        else:
 
-            self.enemy_pose.pose.position.x = -1.3
-            self.enemy_pose.pose.position.y = 0 
-            self.enemy_pose.pose.position.z = 0 
+            self.enemy_pose.pose.position = Point(-1.3,0,0)
             q = tf.transformations.quaternion_from_euler(0,0,0)
             self.enemy_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
-            self.my_pose.pose.position.x = 1.3
-            self.my_pose.pose.position.y = 0
-            self.my_pose.pose.position.z = 0 
+            self.my_pose.pose.position = Point(1.3,0,0)
             q = tf.transformations.quaternion_from_euler(0,0,np.pi)
             self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
@@ -79,13 +72,13 @@ class ServerReceiver(object):
         #Initialize other variables
         self.passed_time = 0
         self.color_flag = [0,0,0,0,0,0]
-        self.lidar_flag = False
+        self.lidar_flag = False #敵がLidarで見えるかどうか
         self.succeeded_goal = False
         self.near_backwall = False
         self.enemy_lost = False
 
         #Publisher
-        self.enemy_pose_pub = rospy.Publisher("send_enemy_pose", PoseStamped, queue_size=1)
+        self.enemy_pose_pub = rospy.Publisher("send_enemy_pose", PoseStamped, queue_size=1) # for rviz
 
         if self.side == "r":
             self.enemy_target = ["BL_B","BL_R","BL_L"]
@@ -111,7 +104,7 @@ class ServerReceiver(object):
         send_ene_pose = PoseStamped()
         send_ene_pose.header.frame_id = "map"
         send_ene_pose.pose = self.enemy_pose.pose
-        self.enemy_pose_pub.publish(send_ene_pose)
+        self.enemy_pose_pub.publish(send_ene_pose) # for rviz
 
         q_e = self.enemy_pose.pose.orientation
         e_e = tf.transformations.euler_from_quaternion((q_e.x,q_e.y,q_e.z,q_e.w))
@@ -203,7 +196,7 @@ class ServerReceiver(object):
             #敵が一切見えない
             diff_time = rospy.Time.now().to_sec()- self.enemy_catch_time
             if diff_time > 10.0:
-                #一定時間以上敵が見えない
+                #かつ一定時間以上敵が見えない
                 self.enemy_lost = True
         self.target_pose_update()
         self.target_distance_update()
@@ -219,10 +212,12 @@ class ServerReceiver(object):
         backward_scan = [x for x in backward_scan if x > 0.1]
         forward_scan = data.ranges[:20]+data.ranges[-20:]
         forward_scan = [x for x in backward_scan if x > 0.1]
+        #後ろの壁との距離が0.28未満のとき後退を止める
         if min(backward_scan) < 0.28:
             self.near_backwall = True
         else:
             self.near_backwall = False
+        #前の壁との距離が0.20未満のとき前進を止める
         if min(forward_scan) < 0.20:
             self.near_frontwall = True
         else:

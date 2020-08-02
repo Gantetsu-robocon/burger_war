@@ -334,7 +334,7 @@ class move():
         succeeded = self.ac.wait_for_result(rospy.Duration(10))
 
         if succeeded and self.index == self.pathlength:
-            self.furifuri(self.path[-1])
+            #self.furifuri(self.path[-1])
             try:
                 self.service_call()
             except rospy.ServiceException, e:

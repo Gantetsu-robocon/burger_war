@@ -12,7 +12,7 @@ import rospy
 from std_msgs.msg import Int8
 from std_msgs.msg import Int16MultiArray
 from burger_war.srv import VisualFeedbackFlag,VisualFeedbackFlagResponse
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Pose
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
@@ -96,7 +96,10 @@ class EnemyBot(object):
         # service
         self.vf_flag_srv = rospy.Service("vf_flag", VisualFeedbackFlag, self.VFFlagCallback)
 
-        # camera subscribver
+        self.my_pose = Pose()
+        self.enemy_pose = Pose()
+
+        # camera subscriber
         # please uncoment out if you use camera
         if use_camera:
             # for convert image topic to opencv obj
