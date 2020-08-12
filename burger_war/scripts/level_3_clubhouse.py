@@ -81,13 +81,8 @@ class EnemyDetector:
             enemy_direction = None
             enemy_dist = None
 
-<<<<<<< HEAD
-        ##print("Enemy: {}, Direction: {}".format(is_near_enemy, enemy_direction))
-        ##print("enemy points {}".format(sum(enemy_scan)))
-=======
         print("Enemy: {}, Direction: {}".format(is_near_enemy, enemy_direction))
         print("enemy points {}".format(sum(enemy_scan)))
->>>>>>> upstream/master
         return is_near_enemy, enemy_direction, enemy_dist
         
 
@@ -201,11 +196,7 @@ class TeriyakiBurger():
         
         self.pose_twist.angular.z = new_twist_ang_z
         self.pose_twist.linear.x = self.speed
-<<<<<<< HEAD
-        ##print(th, th_xy, new_twist_ang_z)
-=======
         #print("th: {}, th_xy: {}, delta_th: {}, new_twist_ang_z: {}".format(th, th_xy, delta_th, new_twist_ang_z))
->>>>>>> upstream/master
 
     def calcTargetTheta(self, pose_x, pose_y):
         x = self.poseToindex(pose_x)

@@ -92,6 +92,7 @@ class EnemyBot(object):
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)   
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.color_flag_pub = rospy.Publisher('color_flag', Int16MultiArray, queue_size=10)
+        #self.image_pub = rospy.Publisher("cv_image",Image, queue_size=1)
 
         # service
         self.vf_flag_srv = rospy.Service("vf_flag", VisualFeedbackFlag, self.VFFlagCallback)
@@ -137,8 +138,8 @@ class EnemyBot(object):
 
             # update twist
             twist = Twist()
-            #self.vel_pub.publish(twist)##消す
 ########################以下、VisualFeedback#####################################
+
             #BlueマーカへのVF VF of A
             if self.VF_change_Flag == 1:
                 self.diff_p_A_rot = (320*self.resi_per-self.BlueCenter_X) / (320*self.resi_per)
@@ -157,7 +158,7 @@ class EnemyBot(object):
                 self.vel_pub.publish(twist)
                 
             #GreenマーカへのVF VF of B
-            if self.VF_change_Flag == 2:
+            elif self.VF_change_Flag == 2:
                 self.diff_p_B_rot = (320*self.resi_per-self.GreenCenter_X) / (320*self.resi_per)
                 self.diff_i_B_rot += self.diff_p_B_rot
                 if math.fabs(self.diff_p_B_rot) *(320*self.resi_per) < 5:
@@ -175,7 +176,7 @@ class EnemyBot(object):
                 self.vel_pub.publish(twist)
 
             # 敵が近いときのVF VF of C
-            if self.VF_change_Flag == 3:
+            elif self.VF_change_Flag == 3:
                 twist.linear.x = -1.5
                 if math.fabs(self.AngleEnemy_AR) < 90*3.141592/180:#相手に背を向けないように動こう
                     twist.angular.z = self.k_p_C_rot * self.AngleEnemy_AR*1.0/(180*3.141592/180)
@@ -184,7 +185,7 @@ class EnemyBot(object):
                 self.vel_pub.publish(twist)
 
             #相手の方向を向く
-            if self.VF_change_Flag == 4:
+            elif self.VF_change_Flag == 4:
                 twist.linear.x = 0
                 target_th = math.atan2(self.enemy_pose.position.y-self.my_pose.position.y,
                                 self.enemy_pose.position.x-self.my_pose.position.x)
@@ -524,6 +525,12 @@ class EnemyBot(object):
 
     def VFFlagCallback(self, data):
         self.VF_change_Flag = data.flag.data
+        #STOP
+        if self.VF_change_Flag ==5:
+            twist = Twist()
+            twist.angular.z = 0
+            twist.linear.x = 0
+            self.vel_pub.publish(twist)
         return VisualFeedbackFlagResponse(True)
 
     def imageCallback(self, data):
@@ -544,6 +551,12 @@ class EnemyBot(object):
         #print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
         #print('(Green x,y,h)=' , self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_h)
         #print('()=' , self.cam_AR_size,self.GreenSize)
+        
+        # for rviz
+        #msg = self.bridge.cv2_to_imgmsg(self.img, encoding="bgr8")
+        #self.image_pub.publish(msg)
+        #rospy.sleep(0.001)
+
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
 
