@@ -41,10 +41,12 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         self.escape_distance = rospy.get_param("~escape_distance", 0.6)
         self.time_th = rospy.get_param("~time_th", 150)
         self.close_th = rospy.get_param("~close_th",0.8)
-        self.vf_B_dist = rospy.get_param("~vf_B_dist",0.5)
+        self.vf_B_dist_default = rospy.get_param("~vf_B_dist_default",0.5)
+        self.vf_B_dist_strong = rospy.get_param("~vf_B_dist_strong",1.2)
         self.update_enemy_time = rospy.get_param("~update_enemy_time", 2.0)
         self.stack_time = rospy.get_param("~stack",5.0)
         self.enemy_find_time = rospy.get_param("~enemy_find_time",13.0)
+        self.enemy_target_offset = rospy.get_param("~enemy_target_offset",0.1)
         
         #Service Server
         self.path_success_srv = rospy.Service("pathplan_succeeded",Empty, self.successCallback)
@@ -91,8 +93,8 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         if target == "Enemy":
             th = math.atan2(self.enemy_pose.pose.position.y-self.my_pose.pose.position.y,
                             self.enemy_pose.pose.position.x-self.my_pose.pose.position.x)
-            x = self.enemy_pose.pose.position.x - 0.1*math.cos(th)
-            y = self.enemy_pose.pose.position.y - 0.1*math.sin(th)
+            x = self.enemy_pose.pose.position.x - self.enemy_target_offset*math.cos(th)
+            y = self.enemy_pose.pose.position.y - self.enemy_target_offset*math.sin(th)
             goal.pose.position.x = x
             goal.pose.position.y = y
             q = tf.transformations.quaternion_from_euler(0,0,th)
@@ -158,7 +160,6 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         target = ""
         send_time = 0
         r = rospy.Rate(1)
-        default_vf_B_dist = self.vf_B_dist
 
         while not rospy.is_shutdown():
             enemy_dist = self.enemy_distance()
@@ -196,11 +197,11 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 if self.enemy_target_states[enemy_target] == self.side :
                     count += 1
             if count <2:
-                self.vf_B_dist = 1.2
+                self.vf_B_dist = self.vf_B_dist_strong
             elif count == 3:
                 self.vf_B_dist = 0.0 # vf しない
             else:
-                self.vf_B_dist = default_vf_B_dist
+                self.vf_B_dist = self.vf_B_dist_default
 
             vel_time_diff = rospy.Time.now().to_sec() - self.pre_vel_time
 

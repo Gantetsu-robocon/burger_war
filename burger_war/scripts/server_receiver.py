@@ -27,7 +27,9 @@ class ServerReceiver(object):
         self.side = rospy.get_param("~side", "r")
         self.enemy_side = "b" if self.side =="r" else "r"
         self.focus_dist = rospy.get_param("~focous_dist",0.20) 
-        current_dir = rospy.get_param("~current_dir","/home/koki/catkin_ws/src/burger_war/burger_war/scripts")
+        self.near_backwall_dist = rospy.get_param("~near_backwall_dist",0.28)
+        self.near_frontwall_dist = rospy.get_param("~near_frontwall_dist",0.20)
+        current_dir = rospy.get_param("~current_dir")
 
         #Initialize wall target states
         with open(current_dir+'/marker_pose.json') as f:
@@ -150,12 +152,12 @@ class ServerReceiver(object):
         forward_scan = data.ranges[:20]+data.ranges[-20:]
         forward_scan = [x for x in backward_scan if x > 0.1]
         #後ろの壁との距離が0.28未満のとき後退を止める
-        if min(backward_scan) < 0.28:
+        if min(backward_scan) < self.near_backwall_dist:
             self.near_backwall = True
         else:
             self.near_backwall = False
         #前の壁との距離が0.20未満のとき前進を止める
-        if min(forward_scan) < 0.20:
+        if min(forward_scan) < self.near_frontwall_dist:
             self.near_frontwall = True
         else:
             self.near_frontwall = False
