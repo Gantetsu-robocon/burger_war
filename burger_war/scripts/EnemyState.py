@@ -177,11 +177,22 @@ class EnemyBot(object):
 
             # 敵が近いときのVF VF of C
             elif self.VF_change_Flag == 3:
-                twist.linear.x = -1.5
-                if math.fabs(self.AngleEnemy_AR) < 90*3.141592/180:#相手に背を向けないように動こう
-                    twist.angular.z = self.k_p_C_rot * self.AngleEnemy_AR*1.0/(180*3.141592/180)
-                else:
-                    twist.angular.z = 0.0
+                twist.linear.x = -1.0
+                #if math.fabs(self.AngleEnemy_AR) < 90*3.141592/180:#相手に背を向けないように動こう
+                    #twist.angular.z = self.k_p_C_rot * self.AngleEnemy_AR*1.0/(180*3.141592/180)
+                #else:
+                    #twist.angular.z = 0.0
+                target_th = math.atan2(self.enemy_pose.position.y-self.my_pose.position.y,
+                                self.enemy_pose.position.x-self.my_pose.position.x)
+                q = self.my_pose.orientation
+                euler = tf.transformations.euler_from_quaternion((q.x,q.y,q.z,q.w))
+                th = euler[2]
+                diff = target_th - th
+                if diff > math.pi:
+                    diff -= math.pi
+                elif diff < -math.pi:
+                    diff += math.pi
+                twist.angular.z = self.k_p_turn*diff
                 self.vel_pub.publish(twist)
 
             #相手の方向を向く

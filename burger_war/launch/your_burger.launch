@@ -12,7 +12,7 @@
 
       <param name="enemy_distance_th" value="0.80"/> <!--敵との距離が近いか-->
       <param name="enemy_distance_th_small" value="0.40"/> <!--敵との距離が近いか-->
-      <param name="enemy_close" value="0.32"/> <!--敵との距離が近すぎないか-->
+      <param name="enemy_close" value="0.30"/> <!--敵との距離が近すぎないか-->
       <param name="escape_distance" value="0.7"/> <!--敵との距離が近すぎないか-->
       <param name="update_ememy_time" value="1.0"/> <!--敵の目標位置のupdate時間-->
       <param name="time_th" value="150"/> <!--時間が残っているかどうか-->

@@ -247,12 +247,12 @@ class GlobalPathPlan(object):
             desired_path = self.add_theta(self.graph_path)
         else:
             desired_path = []
-            theta_sg = self.calc_angle(self.start, self.goal)
-            # if math.cos(theta_sg - self.goal[2]) < 0:
-            #     theta_sg += math.pi
+            #theta_sg = self.calc_angle(self.start, self.goal)
+            ## if math.cos(theta_sg - self.goal[2]) < 0:
+            ##     theta_sg += math.pi
 
-            desired_path.append([self.start[0], self.start[1], theta_sg])
-            desired_path.append([self.goal[0], self.goal[1], theta_sg])
+            #desired_path.append([self.start[0], self.start[1], theta_sg])
+            #desired_path.append([self.goal[0], self.goal[1], theta_sg])
             desired_path.append(self.goal)
         return desired_path
 
@@ -262,6 +262,14 @@ class move():
         # Initialize
         self.ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         self.ac.wait_for_server()
+
+        self.desired_pose = PoseStamped()
+        self.current_pose = PoseStamped()
+        self.index = 0
+        self.path = None
+        self.pathlength = 1
+        self.pose_send = None
+        self.status = 0
 
         # Subscriber
         self.odom_sub = rospy.Subscriber('odom', Odometry, self.odomCallback)
@@ -273,13 +281,6 @@ class move():
         rospy.wait_for_service("pathplan_succeeded")
         self.service_call = rospy.ServiceProxy("pathplan_succeeded", Empty)
 
-        self.desired_pose = PoseStamped()
-        self.current_pose = PoseStamped()
-        self.index = 0
-        self.path = None
-        self.pathlength = 1
-        self.pose_send = None
-        self.status = 0
 
     def desiredPoseCallback(self, data):
         if self.desired_pose.pose.position.x == data.goal.pose.position.x \

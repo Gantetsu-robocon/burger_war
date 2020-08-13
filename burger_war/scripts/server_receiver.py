@@ -82,7 +82,6 @@ class ServerReceiver(object):
         self.succeeded_goal = False
         self.near_backwall = False
         self.enemy_lost = False
-        self.target_distance_update()
 
         #Subscriber
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
@@ -101,10 +100,6 @@ class ServerReceiver(object):
                 self.wall_target_states[target_name]["player"] = info.get("player")
             elif target_name in self.enemy_target_states:
                 self.enemy_target_states[target_name] = info.get("player")
-
-    def target_distance_update(self):
-        for target_name in self.wall_target_states:
-            self.wall_target_states[target_name]["distance"] = self.target_distance(target_name)
     
     # 相手が最後にとった的を保存
     def last_enemy_target(self):
@@ -125,7 +120,6 @@ class ServerReceiver(object):
 
     def myposeCallback(self,pose):
         self.my_pose = pose
-        self.target_distance_update()
 
     def enemyposeCallback(self, pose):
         self.enemy_pose = pose
@@ -165,23 +159,40 @@ class ServerReceiver(object):
     #Choose target
     def nearest_target(self):
         target_list = [ d for d in self.wall_target_states if not self.wall_target_states[d].get("player") == self.side]
-        nearest_name = target_list[0]
+        candidate_name = target_list[0]
+        min_dist = self.target_distance(candidate_name)
         for target_name in target_list:
-            if self.wall_target_states[target_name]["distance"] < self.wall_target_states[nearest_name]["distance"]:
-                nearest_name = target_name
-        return nearest_name
+            dist = self.target_distance(target_name)
+            if dist < min_dist:
+                candidate_name = target_name
+                min_dist = dist
+        return candidate_name
 
-    def highest_target(self):
+    def nearest_taken_target(self):
         target_list = [ d for d in self.wall_target_states if self.wall_target_states[d].get("player") == self.enemy_side]
         if not target_list:
             return self.nearest_target()
         else:
-            highest_name = target_list[0]
+            candidate_name = target_list[0]
+            min_dist = self.target_distance(candidate_name)
             for target_name in target_list:
-                if self.wall_target_states[target_name]["distance"] > self.wall_target_states[highest_name]["distance"]:
-                    highest_name = target_name
-        return highest_name
+                dist = self.target_distance(candidate_name)
+                if dist < min_dist:
+                    candidate_name = target_name
+                    min_dist = dist
+        return candidate_name
 
+    def enemy_far_target(self):
+        target_list = [ d for d in self.wall_target_states if not self.wall_target_states[d].get("player") == self.side]
+        candidate_name = target_list[0]
+        max_dist = self.target_distance_from_enemy(candidate_name)
+        for target in target_list:
+            dist = self.target_distance_from_enemy(target)
+            if dist > max_dist:
+                candidate_name = target
+                max_dist = dist
+        return candidate_name
+        
     #Calculate distance
     def target_distance(self, target_name):
         diff_x = self.wall_target_states[target_name]["pose"][0]-self.my_pose.pose.position.x
@@ -191,6 +202,11 @@ class ServerReceiver(object):
     def enemy_distance(self):
         diff_x = self.enemy_pose.pose.position.x - self.my_pose.pose.position.x
         diff_y = self.enemy_pose.pose.position.y - self.my_pose.pose.position.y
+        return np.sqrt(diff_x**2+diff_y**2)
+
+    def target_distance_from_enemy(self, target_name):
+        diff_x = self.wall_target_states[target_name]["pose"][0]-self.enemy_pose.pose.position.x
+        diff_y = self.wall_target_states[target_name]["pose"][1]-self.enemy_pose.pose.position.y
         return np.sqrt(diff_x**2+diff_y**2)
 
     #Debug method

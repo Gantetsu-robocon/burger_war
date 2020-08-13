@@ -15,7 +15,7 @@ import math
 
 #Import ROS topic type
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseStamped, Quaternion, Point, Twist, Pose
+from geometry_msgs.msg import PoseStamped, Quaternion, Twist, Pose
 from std_msgs.msg import String, Int16MultiArray, Int8, ColorRGBA
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 #from jsk_rviz_plugins.msg import OverlayText
@@ -76,8 +76,9 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         self.initial_end_dist = 1.3 #この距離まで敵に近づくまでは順番に取る
         self.initial_state = True #敵に近づくまでは的を順番に取る
         self.target_number = 0 #的の番号
-        self.target_order = {0:"OctopusWiener_S",1:"FriedShrimp_S",2:"OctopusWiener_N",
-            3:"FriedShrimp_E",4:"Omelette_S"} #的を取る順番
+        self.target_order = ["FriedShrimp_S","OctopusWiener_N",
+            "FriedShrimp_E","Omelette_S"] #的を取る順番
+        self.escape_flag = [0,0] # ind1:vf状態に入ったか ind2:escape状態に入ったか
         
     def velCallback(self, data):
         if not (data.linear.x == 0.0 and data.angular.z == 0.0):
@@ -116,6 +117,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
     def vf(self,previous_state,target):
         pre_state = previous_state
         if self.color_flag[2] and self.enemy_distance() < self.vf_B_dist:
+            self.escape_flag[0] = 1
             if not pre_state == "Visual_Feedback":
                 self.cancel_goal_call()
                 self.vf_flag_call(Int8(data=2))
@@ -149,8 +151,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         #text.fg_color = ColorRGBA(25 / 255.0, 1.0, 240.0 / 255.0, 1.0)
         #text.bg_color = ColorRGBA(0.0, 0.0, 0.0, 0.2)
         #self.state_pub.publish(text)
-        print ""
-        print "【State】",state
+        print "\n【State】",state
         if not target == "":
             print "【Target】",target
         print ""
@@ -179,7 +180,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
             in_time = True if self.passed_time < self.time_th else False
             #かなり近いところに壁のマーカーがあるか
             nearset_target = self.nearest_target()
-            nearest_dist = self.wall_target_states[nearset_target]["distance"]
+            nearest_dist = self.target_distance(nearset_target)
             marker_is_close = True if nearest_dist < self.close_th else False
             no_marker_close = True if not marker_is_close else False
             #敵の位置を更新するか
@@ -222,11 +223,12 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                         self.goal_reached = False
                         pre_state = ""
                         self.target_number += 1
-                        if self.target_number == 5:
+                        if self.target_number == len(self.target_order):
                             self.initial_state = False
             
             elif (ene_is_close and find_enemy) or vel_time_diff > self.stack_time or self.color_flag[3]: 
                 #回避
+                self.escape_flag[1] = 1
                 if not pre_state =="Escape":
                     self.cancel_goal_call()
                     self.vf_flag_call(Int8(data=3))
@@ -252,11 +254,32 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 pre_state = self.vf(pre_state,target)
 
             elif in_time and no_marker_close:
-                if count < 3:
+                if all(self.escape_flag):
+                    #敵から遠いところにある的を取りに行く
+                    if not pre_state =="Visual_Feedback":
+                        if (not pre_state == "Go_to_the_marker_far_from_enemy" ) or update_enemy:
+                            self.vf_flag_call(Int8(data=0))
+                            target = self.enemy_far_target()
+                            self.send_goal(target)
+                            send_time = rospy.Time.now().to_sec()
+                            time.sleep(0.5)
+                            pre_state = "Go_to_the_marker_far_from_enemy"
+                            self.show_state_and_target(pre_state,target)
+
+                    if pre_state == "Go_to_the_marker_far_from_enemy":
+                        if self.goal_reached:
+                            self.escape_flag = [0,0]
+                            self.cancel_goal_call()
+                            print "ゴール到達"
+                            self.goal_reached = False
+                            self.escape = False
+                            pre_state = ""
+                    #条件がそろえばvf
+                    pre_state = self.vf(pre_state,target)
+                elif count < 2:
                     #敵の的を取りに行く
                     if not pre_state =="Visual_Feedback":
                         if (not pre_state == "Go_to_the_enemy_marker" ) or update_enemy:
-                            self.cancel_goal_call()
                             self.vf_flag_call(Int8(data=0))
                             target = "Enemy"
                             self.send_goal(target)
@@ -276,17 +299,16 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 else:
                     #最も高い壁の的（相手が取った的）を取りに行く
                     if not pre_state =="Visual_Feedback":
-                        if (not pre_state == "Go_to_the_highest_marker" ) or update_enemy:
-                            self.cancel_goal_call()
+                        if (not pre_state == "Go_to_the_taken_marker" ) or update_enemy:
                             self.vf_flag_call(Int8(data=0))
-                            target = self.highest_target()
+                            target = self.nearest_taken_target()
                             self.send_goal(target)
                             send_time = rospy.Time.now().to_sec()
                             time.sleep(0.5)
-                            pre_state = "Go_to_the_highest_marker"
+                            pre_state = "Go_to_the_taken_marker"
                             self.show_state_and_target(pre_state,target)
 
-                    if pre_state == "Go_to_the_highest_marker":
+                    if pre_state == "Go_to_the_taken_marker":
                         if self.goal_reached or self.wall_target_states[target]["player"]==self.side:
                             self.cancel_goal_call()
                             print "ゴール到達"
@@ -299,7 +321,6 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 #最も近い的を取りに行く
                 if not pre_state =="Visual_Feedback":
                     if (not pre_state == "Go_to_the_nearest_marker" ) or update_enemy:
-                        self.cancel_goal_call()
                         self.vf_flag_call(Int8(data=0))
                         target = self.nearest_target()
                         self.send_goal(target)
