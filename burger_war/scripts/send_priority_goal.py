@@ -224,7 +224,7 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 self.escape_flag[1] = 1
                 if not pre_state =="Escape":
                     self.cancel_goal_call()
-                    self.vf_flag_call(Int8(data=-1))
+                    #self.vf_flag_call(Int8(data=4))
                     self.vf_flag_call(Int8(data=3))
                     pre_state = "Escape"
                     self.show_state_and_target(pre_state)
