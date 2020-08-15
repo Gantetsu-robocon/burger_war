@@ -218,8 +218,8 @@ class GlobalPathPlan(object):
                 y_prev = y - 0.05*math.sin(theta)
 
                 desired_path.append([x_prev, y_prev, desired_path[-1][2]])
-                desired_path.append([x_prev, y_prev, theta])
-                desired_path.append([x_next, y_next, theta])
+                #desired_path.append([x_prev, y_prev, theta])
+                #desired_path.append([x_next, y_next, theta])
                 desired_path.append([x_next, y_next, self.calc_angle(self.pos[num], self.pos[path[i+1]])])
         return desired_path
 
@@ -328,7 +328,7 @@ class move():
         self.goal.target_pose.pose.position.y =  pose[1]
         q = tf.transformations.quaternion_from_euler(0, 0, pose[2])
         self.goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3]) 
-        self.ac.cancel_all_goals()
+        #self.ac.cancel_all_goals()
         self.ac.send_goal(self.goal)
         self.pose_send = pose
 
@@ -336,6 +336,8 @@ class move():
 
         if succeeded and self.index == self.pathlength:
             #self.furifuri(self.path[-1])
+            self.path = None
+            self.desired_pose = PoseStamped()
             try:
                 self.service_call()
             except rospy.ServiceException, e:
@@ -355,6 +357,7 @@ class move():
     def resetPathplanCallback(self, data):
         self.ac.cancel_all_goals()
         self.path = None
+        self.desired_pose = PoseStamped()
         return EmptyResponse()
 
     def furifuri(self, pose):
@@ -374,4 +377,3 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
         mymove.sendDesiredPose()
         r.sleep()
-

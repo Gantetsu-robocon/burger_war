@@ -5,7 +5,7 @@
   <arg name="robot_name" default=""/>
 
   <!-- Estimate enemy position by canera -->
-    <node pkg="burger_war" type="EnemyState.py" name="relative_enemy_camera" output="log">
+    <node pkg="burger_war" type="EnemyState.py" name="relative_enemy_camera" output="screen">
       <param name="rate" value="10"/>
       <param name="resize_rate" value="0.8"/> <!-- 0 〜 1 -->
     </node>
@@ -18,7 +18,7 @@
   </include>
 
   <!-- Publish enemy pose -->
-  <node pkg="burger_war" type="pub_enemy.py" name="pub_enemy" output="screen">
+  <node pkg="burger_war" type="pub_enemy.py" name="pub_enemy" output="log">
       <param name="rate" value="$(arg rate)"/>
       <param name="side" value="$(arg side)"/>
   </node>

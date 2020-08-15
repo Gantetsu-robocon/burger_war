@@ -6,7 +6,6 @@
 
     <node pkg="burger_war" type="send_priority_goal.py" name="send_priority_goal" output="screen">
       <param name="side" value="$(arg side)" />
-      <param name="focous_dist" value="0.30"/> <!--マーカー撮影位置のオフセット（特定のマーカーのみ）-->
       <param name="near_backwall_dist" value="0.28"/> <!--ロボットの後ろの壁が近いかどうかの判定値-->
       <param name="near_frontwall_dist" value="0.20"/> <!--ロボットの前の壁が近いかどうかの判定値-->
 
@@ -17,7 +16,7 @@
       <param name="update_ememy_time" value="1.0"/> <!--敵の目標位置のupdate時間-->
       <param name="time_th" value="150"/> <!--時間が残っているかどうか-->
       <param name="close_th" value="0.30"/> <!--かなり近い所にマーカーがあるかどうか-->
-      <param name="vf_B_dist_default" value="0.5"/> <!--vf_Bを始める距離-->
+      <param name="vf_B_dist_default" value="0.8"/> <!--vf_Bを始める距離-->
       <param name="vf_B_dist_strong" value="1.2"/> <!--敵の的を２個以上取っていない時にvf_Bを始める距離-->
       <param name="stack" value="3"/> <!--スタックタイム-->
       <param name="enemy_find_time" value="13.0"/> <!--初期状態を持続する最短時間-->

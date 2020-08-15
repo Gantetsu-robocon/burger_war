@@ -7,6 +7,7 @@ import json
 import tf
 import copy
 import numpy as np
+from math import cos
 
 #Import ROS message type
 from geometry_msgs.msg import PoseStamped, Quaternion, Point
@@ -26,7 +27,6 @@ class ServerReceiver(object):
         #Get parameter
         self.side = rospy.get_param("~side", "r")
         self.enemy_side = "b" if self.side =="r" else "r"
-        self.focus_dist = rospy.get_param("~focous_dist",0.20) 
         self.near_backwall_dist = rospy.get_param("~near_backwall_dist",0.28)
         self.near_frontwall_dist = rospy.get_param("~near_frontwall_dist",0.20)
         current_dir = rospy.get_param("~current_dir")
@@ -34,12 +34,6 @@ class ServerReceiver(object):
         #Initialize wall target states
         with open(current_dir+'/marker_pose.json') as f:
             self.wall_target_states = json.load(f)
-        self.wall_target_states["Tomato_N"]["pose"][0] += self.focus_dist
-        self.wall_target_states["Omelette_N"]["pose"][0] += self.focus_dist 
-        self.wall_target_states["Pudding_S"]["pose"][0] -= self.focus_dist
-        self.wall_target_states["OctopusWiener_S"]["pose"][0] -= self.focus_dist
-        self.wall_target_states["FriedShrimp_N"]["pose"][0] += self.focus_dist
-        self.wall_target_states["FriedShrimp_S"]["pose"][0] -= self.focus_dist
 
         #Initialize enemy target states
         if self.side == "r":
@@ -62,8 +56,6 @@ class ServerReceiver(object):
             q = tf.transformations.quaternion_from_euler(0,0,0)
             self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
-            self.last_target = Target([1.3,0,np.pi])
-
         else:
             self.enemy_pose.pose.position = Point(-1.3,0,0)
             q = tf.transformations.quaternion_from_euler(0,0,0)
@@ -73,15 +65,13 @@ class ServerReceiver(object):
             q = tf.transformations.quaternion_from_euler(0,0,np.pi)
             self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
-            self.last_target = Target([-1.3,0,0])
-
         #Initialize other variables
         self.passed_time = 0
         self.color_flag = [0,0,0,0,0,0]
         self.lidar_flag = False #敵がLidarで見えるかどうか
         self.succeeded_goal = False
         self.near_backwall = False
-        self.enemy_lost = False
+        self.enemy_catch_time = 0
 
         #Subscriber
         self.server_sub = rospy.Subscriber('war_state', String, self.serverCallback)
@@ -101,38 +91,19 @@ class ServerReceiver(object):
             elif target_name in self.enemy_target_states:
                 self.enemy_target_states[target_name] = info.get("player")
     
-    # 相手が最後にとった的を保存
-    def last_enemy_target(self):
-        for target_name in self.wall_target_states:
-            if self.wall_target_states[target_name]["player"] != self.wall_target_states_pre[target_name]["player"]:
-                if self.wall_target_states[target_name]["player"] == self.enemy_side:
-                    self.last_target.name = target_name
-                    self.last_target.position = self.wall_target_states[target_name]["pose"]
-
     #Callback method
     def serverCallback(self, data):
         server_data = json.loads(data.data)
         target_info = server_data["targets"]
         self.target_player_update(target_info)
         self.passed_time = server_data["time"]
-        self.last_enemy_target()
-        self.last_target.time = server_data["time"]
 
     def myposeCallback(self,pose):
         self.my_pose = pose
 
     def enemyposeCallback(self, pose):
+        self.enemy_catch_time = rospy.Time.now().to_sec()
         self.enemy_pose = pose
-        if not ((self.color_flag[0] + self.color_flag[2] + self.color_flag[3]) == 0 and (self.lidar_flag==False)):
-            #敵が見える
-            self.enemy_catch_time = rospy.Time.now().to_sec()
-            self.enemy_lost = False
-        else:
-            #敵が一切見えない
-            diff_time = rospy.Time.now().to_sec()- self.enemy_catch_time
-            if diff_time > 10.0:
-                #かつ一定時間以上敵が見えない
-                self.enemy_lost = True
 
     def colorCallback(self, array):
         self.color_flag = array.data
@@ -141,20 +112,50 @@ class ServerReceiver(object):
         self.lidar_flag = data.data
 
     def lidarDataCallback(self,data):
-        backward_scan = data.ranges[145:215]
-        backward_scan = [x for x in backward_scan if x > 0.1]
-        forward_scan = data.ranges[:20]+data.ranges[-20:]
-        forward_scan = [x for x in backward_scan if x > 0.1]
-        #後ろの壁との距離が0.28未満のとき後退を止める
-        if min(backward_scan) < self.near_backwall_dist:
-            self.near_backwall = True
-        else:
-            self.near_backwall = False
-        #前の壁との距離が0.20未満のとき前進を止める
-        if min(forward_scan) < self.near_frontwall_dist:
+        self.near_frontwall = False
+        self.near_backwall = False
+        #前方が障害物と近いかチェック
+        f_scan = data.ranges[-10:]+data.ranges[:10]
+        f_scan = [x for x in f_scan if x > 0.1]
+        if min(f_scan) < self.near_frontwall_dist / cos(5/180*np.pi):
             self.near_frontwall = True
-        else:
-            self.near_frontwall = False
+        f_scan = data.ranges[-20:-10]+data.ranges[10:20]
+        f_scan = [x for x in f_scan if x > 0.1]
+        if min(f_scan) < self.near_frontwall_dist / cos(15/180*np.pi):
+            self.near_frontwall = True
+        f_scan = data.ranges[-30:-20]+data.ranges[20:30]
+        f_scan = [x for x in f_scan if x > 0.1]
+        if min(f_scan) < self.near_frontwall_dist / cos(25/180*np.pi):
+            self.near_frontwall = True
+        f_scan = data.ranges[-40:-30]+data.ranges[30:40]
+        f_scan = [x for x in f_scan if x > 0.1]
+        if min(f_scan) < self.near_frontwall_dist / cos(35/180*np.pi):
+            self.near_frontwall = True
+        f_scan = data.ranges[-50:-40]+data.ranges[40:50]
+        f_scan = [x for x in f_scan if x > 0.1]
+        if min(f_scan) < self.near_frontwall_dist / cos(45/180*np.pi):
+            self.near_frontwall = True
+        #後方が障害物と近いかチェック
+        b_scan = data.ranges[170:190]
+        b_scan = [x for x in b_scan if x > 0.1]
+        if min(b_scan) < self.near_backwall_dist / cos(5/180*np.pi):
+            self.near_backwall = True
+        b_scan = data.ranges[160:170]+data.ranges[190:200]
+        b_scan = [x for x in b_scan if x > 0.1]
+        if min(b_scan) < self.near_backwall_dist / cos(15/180*np.pi):
+            self.near_backwall = True
+        b_scan = data.ranges[150:160]+data.ranges[200:210]
+        b_scan = [x for x in b_scan if x > 0.1]
+        if min(b_scan) < self.near_backwall_dist / cos(25/180*np.pi):
+            self.near_backwall = True
+        b_scan = data.ranges[140:150]+data.ranges[210:220]
+        b_scan = [x for x in b_scan if x > 0.1]
+        if min(b_scan) < self.near_backwall_dist / cos(35/180*np.pi):
+            self.near_backwall = True
+        b_scan = data.ranges[135:140]+data.ranges[220:225]
+        b_scan = [x for x in b_scan if x > 0.1]
+        if min(b_scan) < self.near_backwall_dist / cos(42.5/180*np.pi):
+            self.near_backwall = True
 
     #Choose target
     def nearest_target(self):
