@@ -37,8 +37,6 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         self.escape_distance = rospy.get_param("~escape_distance", 0.6)
         self.time_th = rospy.get_param("~time_th", 150)
         self.close_th = rospy.get_param("~close_th",0.8)
-        self.vf_B_dist_default = rospy.get_param("~vf_B_dist_default",0.5)
-        self.vf_B_dist_strong = rospy.get_param("~vf_B_dist_strong",1.2)
         self.update_enemy_time = rospy.get_param("~update_enemy_time", 2.0)
         self.stack_time = rospy.get_param("~stack",5.0)
         self.enemy_find_time = rospy.get_param("~enemy_find_time",13.0)
@@ -188,12 +186,14 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
             for enemy_target in self.enemy_target_states:
                 if self.enemy_target_states[enemy_target] == self.side :
                     count += 1
-            if count <2:
-                self.vf_B_dist = self.vf_B_dist_strong
+            if count ==0:
+                self.vf_B_dist = 1.2
+            elif count ==1:
+                self.vf_B_dist = 0.8
+            elif count ==2:
+                self.vf_B_dist = 0.7
             elif count == 3:
                 self.vf_B_dist = 0.0 # vf しない
-            else:
-                self.vf_B_dist = self.vf_B_dist_default
 
             vel_time_diff = rospy.Time.now().to_sec() - self.pre_vel_time
 
@@ -219,7 +219,8 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                 #条件がそろえばvf
                 pre_state = self.vf(pre_state,target)
             
-            elif (ene_is_close and find_enemy) or vel_time_diff > self.stack_time or self.color_flag[3]: 
+            #elif (ene_is_close and find_enemy) or vel_time_diff > self.stack_time: #or self.color_flag[3]: 
+            elif ene_is_close or vel_time_diff > self.stack_time: #or self.color_flag[3]: 
                 #回避
                 self.escape_flag[1] = 1
                 if not pre_state =="Escape":

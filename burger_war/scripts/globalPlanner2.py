@@ -283,10 +283,10 @@ class move():
 
 
     def desiredPoseCallback(self, data):
-        if self.desired_pose.pose.position.x == data.goal.pose.position.x \
-           and self.desired_pose.pose.position.y == data.goal.pose.position.y \
-           and self.desired_pose.pose.orientation.w == data.goal.pose.orientation.w:
-            return DesiredPoseResponse()
+        #if self.desired_pose.pose.position.x == data.goal.pose.position.x \
+           #and self.desired_pose.pose.position.y == data.goal.pose.position.y \
+           #and self.desired_pose.pose.orientation.w == data.goal.pose.orientation.w:
+            #return DesiredPoseResponse()
             
         self.ac.cancel_all_goals()
 

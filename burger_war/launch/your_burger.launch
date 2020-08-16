@@ -16,9 +16,7 @@
       <param name="update_ememy_time" value="1.0"/> <!--敵の目標位置のupdate時間-->
       <param name="time_th" value="150"/> <!--時間が残っているかどうか-->
       <param name="close_th" value="0.30"/> <!--かなり近い所にマーカーがあるかどうか-->
-      <param name="vf_B_dist_default" value="0.8"/> <!--vf_Bを始める距離-->
-      <param name="vf_B_dist_strong" value="1.2"/> <!--敵の的を２個以上取っていない時にvf_Bを始める距離-->
-      <param name="stack" value="3"/> <!--スタックタイム-->
+      <param name="stack" value="2.5"/> <!--スタックタイム-->
       <param name="enemy_find_time" value="13.0"/> <!--初期状態を持続する最短時間-->
       <param name="enemy_target_offset" value="0.1"/> <!--敵を目標とするときに中心からどれだけオフセットを取るか-->
       <param name="current_dir" value= "$(find burger_war)/scripts"/>

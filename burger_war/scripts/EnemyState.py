@@ -38,14 +38,14 @@ class EnemyBot(object):
         #self.k_i_A_adv = 0.0 #iゲイン
         self.k_p_B_rot = 0.2 #pゲイン
         self.k_i_B_rot = 0.0 #iゲイン
-        self.k_p_B_adv = 0.6 #pゲイン
+        self.k_p_B_adv = 0.65 #pゲイン
         self.k_i_B_adv = 0.0 #iゲイン
         #self.k_p_C_rot = 0.5 #0.2 #pゲイン
-        self.k_p_esc = 0.2 #敵を向くときのpゲイン->回避
+        self.k_p_esc = 0.5 #敵を向くときのpゲイン->回避
         self.k_i_esc = 0.0 #敵を向くときのiゲイン->回避
-        self.k_p_adv = 1.2 # 敵から逃げる速度
-        self.k_p_turn= 1.0 #敵を向くときのpゲイン->その場
-        self.k_i_turn = 0.0 #敵を向くときのiゲイン->その場
+        self.k_p_adv = 1.0 # 敵から逃げる速度
+        self.k_p_turn= 0.9 #敵を向くときのpゲイン->その場
+        self.k_i_turn = 0.1 #敵を向くときのiゲイン->その場
 
         #self.diff_p_A_rot = 0
         #self.diff_i_A_rot = 0
@@ -238,7 +238,13 @@ class EnemyBot(object):
                     self.diff_i_turn += diff_th
                 twist.angular.z = self.k_p_turn*diff_th + self.k_i_turn * self.diff_i_turn
 
-                twist.linear.x = 0
+                #時間がたったら敵に近づいて回避状態に入る
+                now = rospy.Time.now().to_sec()
+                diff = now - self.VF_receive_time
+                if diff < 4:
+                    twist.linear.x = 0
+                else:
+                    twist.linear.x = 0.01
                 
                 self.vel_pub.publish(twist)
             

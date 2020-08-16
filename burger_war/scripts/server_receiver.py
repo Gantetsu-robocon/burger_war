@@ -148,14 +148,18 @@ class ServerReceiver(object):
         b_scan = [x for x in b_scan if x > 0.1]
         if min(b_scan) < self.near_backwall_dist / cos(25/180*np.pi):
             self.near_backwall = True
-        b_scan = data.ranges[140:150]+data.ranges[210:220]
+        b_scan = data.ranges[145:150]+data.ranges[210:215]
         b_scan = [x for x in b_scan if x > 0.1]
-        if min(b_scan) < self.near_backwall_dist / cos(35/180*np.pi):
+        if min(b_scan) < self.near_backwall_dist / cos(32.5/180*np.pi):
             self.near_backwall = True
-        b_scan = data.ranges[135:140]+data.ranges[220:225]
-        b_scan = [x for x in b_scan if x > 0.1]
-        if min(b_scan) < self.near_backwall_dist / cos(42.5/180*np.pi):
-            self.near_backwall = True
+        #b_scan = data.ranges[140:150]+data.ranges[210:220]
+        #b_scan = [x for x in b_scan if x > 0.1]
+        #if min(b_scan) < self.near_backwall_dist / cos(35/180*np.pi):
+            #self.near_backwall = True
+        #b_scan = data.ranges[135:140]+data.ranges[220:225]
+        #b_scan = [x for x in b_scan if x > 0.1]
+        #if min(b_scan) < self.near_backwall_dist / cos(42.5/180*np.pi):
+            #self.near_backwall = True
 
     #Choose target
     def nearest_target(self):
