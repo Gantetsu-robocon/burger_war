@@ -19,7 +19,7 @@ class PubEnemyPose():
     def __init__(self):
 
         #Get parameter
-        self.rate = rospy.get_param("~rate", 1)
+        self.rate = rospy.get_param("~rate", 5)
         self.side = rospy.get_param("~side", "r")
 
         #Transformer, Listener, Subscriber, Publisher
@@ -60,7 +60,8 @@ class PubEnemyPose():
             self.t_camera.pose.orientation = t.transform.rotation
             self.flag_color = True
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            self.flag_color = False
+            pass
+            #self.flag_color = False
     
     def lisn_enemy_lidar(self):
         try:
@@ -69,7 +70,8 @@ class PubEnemyPose():
             self.t_lidar.pose.orientation = t.transform.rotation
             self.flag_lidar = True
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            self.flag_lidar = False
+            pass
+            #self.flag_lidar = False
 
     def pub_enemy_abs(self):
         if self.flag_lidar == True:

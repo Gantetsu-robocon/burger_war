@@ -12,7 +12,7 @@ import rospy
 from std_msgs.msg import Int8
 from std_msgs.msg import Int16MultiArray
 from burger_war.srv import VisualFeedbackFlag,VisualFeedbackFlagResponse
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Pose
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
@@ -32,26 +32,32 @@ class EnemyBot(object):
         self.rate = rospy.get_param("~rate", 5)
         self.resi_per = rospy.get_param("~resize_rate", 0.8)
 
-        self.k_p_A_rot = 0.1 #pゲイン
-        self.k_i_A_rot = 0.0 #iゲイン
-        self.k_p_A_adv = 0.5 #pゲイン
-        self.k_i_A_adv = 0.0 #iゲイン
-        self.k_p_B_rot = 2.0 #pゲイン
-        self.k_i_B_rot = 0.5 #iゲイン
-        self.k_p_B_adv = 0.3 #pゲイン
+        #self.k_p_A_rot = 0.1 #pゲイン
+        #self.k_i_A_rot = 0.0 #iゲイン
+        #self.k_p_A_adv = 0.5 #pゲイン
+        #self.k_i_A_adv = 0.0 #iゲイン
+        self.k_p_B_rot = 0.2 #pゲイン
+        self.k_i_B_rot = 0.0 #iゲイン
+        self.k_p_B_adv = 0.65 #pゲイン
         self.k_i_B_adv = 0.0 #iゲイン
-        self.k_p_C_rot = 0.5 #0.2 #pゲイン
-        self.k_p_turn = 0.5 #pゲイン
+        #self.k_p_C_rot = 0.5 #0.2 #pゲイン
+        self.k_p_esc = 0.5 #敵を向くときのpゲイン->回避
+        self.k_i_esc = 0.0 #敵を向くときのiゲイン->回避
+        self.k_p_adv = 1.0 # 敵から逃げる速度
+        self.k_p_turn= 0.9 #敵を向くときのpゲイン->その場
+        self.k_i_turn = 0.1 #敵を向くときのiゲイン->その場
 
-        self.diff_p_A_rot = 0
+        #self.diff_p_A_rot = 0
+        #self.diff_i_A_rot = 0
+        #self.diff_p_A_adv = 0
+        #self.diff_i_A_adv = 0
         self.diff_p_B_rot = 0
-        self.diff_i_A_rot = 0
         self.diff_i_B_rot = 0
-        self.diff_p_A_adv = 0
         self.diff_p_B_adv = 0
-        self.diff_i_A_adv = 0
         self.diff_i_B_adv = 0
-        self.diff_i_c = 0
+        #self.diff_i_c = 0
+        self.diff_i_esc = 0
+        self.diff_i_turn = 0
 
         # カメラ画像上での赤マーカ位置,サイズ
         self.cam_Point_x = 0.0
@@ -87,16 +93,21 @@ class EnemyBot(object):
         self.real_target_id = 0
         # VFフラグ
         self.VF_change_Flag = 0
+        self.VF_receive_time = 0
 
         # publisher
         self.relative_pose_pub = rospy.Publisher('relative_pose', PoseStamped ,queue_size=10)   
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         self.color_flag_pub = rospy.Publisher('color_flag', Int16MultiArray, queue_size=10)
+        #self.image_pub = rospy.Publisher("cv_image",Image, queue_size=1)
 
         # service
         self.vf_flag_srv = rospy.Service("vf_flag", VisualFeedbackFlag, self.VFFlagCallback)
 
-        # camera subscribver
+        self.my_pose = Pose()
+        self.enemy_pose = Pose()
+
+        # camera subscriber
         # please uncoment out if you use camera
         if use_camera:
             # for convert image topic to opencv obj
@@ -108,6 +119,14 @@ class EnemyBot(object):
             self.enemy_pose_sub = rospy.Subscriber('absolute_pos',PoseStamped, self.enemyposeCallback)
             #self.vf_flag_pub =rospy.Subscriber('/vf_flag', Int8, self.VFFlagCallback)
             
+    def reset_diff(self):
+        self.diff_p_B_rot = 0
+        self.diff_i_B_rot = 0
+        self.diff_p_B_adv = 0
+        self.diff_i_B_adv = 0
+        self.diff_i_c = 0
+        self.diff_i_turn = 0
+
     def strategy(self):
         r = rospy.Rate(self.rate)
 
@@ -134,24 +153,24 @@ class EnemyBot(object):
 
             # update twist
             twist = Twist()
-            #self.vel_pub.publish(twist)##消す
-########################以下、VisualFeedback#####################################
-            #BlueマーカへのVF VF of A
-            if self.VF_change_Flag == 1:
-                self.diff_p_A_rot = (320*self.resi_per-self.BlueCenter_X) / (320*self.resi_per)
-                self.diff_i_A_rot += self.diff_p_A_rot
-                if math.fabs(self.diff_p_A_rot) *(320*self.resi_per) < 5:
-                    self.diff_i_A_rot = 0
-                twist.angular.z = self.k_p_A_rot*self.diff_p_A_rot + self.k_i_A_rot*self.diff_i_A_rot
+            ########################以下、VisualFeedback#####################################
 
-                self.diff_p_A_adv = (25000*self.resi_per*self.resi_per-self.BlueSize) / (25000*self.resi_per*self.resi_per)                
-                print(self.diff_p_A_adv)
-                self.diff_i_A_adv += self.diff_p_A_adv
-                if self.diff_p_A_adv < 0.1:
-                    self.diff_p_A_adv = 0.1
-                    self.diff_i_A_adv = 0
-                twist.linear.x = self.k_p_A_adv*self.diff_p_A_adv + self.k_i_A_adv*self.diff_i_A_adv
-                self.vel_pub.publish(twist)
+            #BlueマーカへのVF VF of A
+            #if self.VF_change_Flag == 1:
+                #self.diff_p_A_rot = (320*self.resi_per-self.BlueCenter_X) / (320*self.resi_per)
+                #self.diff_i_A_rot += self.diff_p_A_rot
+                #if math.fabs(self.diff_p_A_rot) *(320*self.resi_per) < 5:
+                    #self.diff_i_A_rot = 0
+                #twist.angular.z = self.k_p_A_rot*self.diff_p_A_rot + self.k_i_A_rot*self.diff_i_A_rot
+
+                #self.diff_p_A_adv = (25000*self.resi_per*self.resi_per-self.BlueSize) / (25000*self.resi_per*self.resi_per)                
+                #print(self.diff_p_A_adv)
+                #self.diff_i_A_adv += self.diff_p_A_adv
+                #if self.diff_p_A_adv < 0.1:
+                    #self.diff_p_A_adv = 0.1
+                    #self.diff_i_A_adv = 0
+                #twist.linear.x = self.k_p_A_adv*self.diff_p_A_adv + self.k_i_A_adv*self.diff_i_A_adv
+                #self.vel_pub.publish(twist)
                 
             #GreenマーカへのVF VF of B
             if self.VF_change_Flag == 2:
@@ -159,43 +178,83 @@ class EnemyBot(object):
                 self.diff_i_B_rot += self.diff_p_B_rot
                 if math.fabs(self.diff_p_B_rot) *(320*self.resi_per) < 5:
                     self.diff_i_B_rot = 0
-                twist.angular.z = self.k_p_A_rot*self.diff_p_B_rot + self.k_i_A_rot*self.diff_i_B_rot
+                twist.angular.z = self.k_p_B_rot*self.diff_p_B_rot + self.k_i_B_rot*self.diff_i_B_rot
 
                 self.diff_p_B_adv = (25000*self.resi_per*self.resi_per-self.GreenSize) / (25000*self.resi_per*self.resi_per)
                 self.diff_i_B_adv += self.diff_p_B_adv
                 if self.diff_p_B_adv < 0.1:
                     self.diff_p_B_adv = 0.1
                     self.diff_i_B_adv = 0.0
-                twist.linear.x = self.k_p_A_adv*self.diff_p_B_adv + self.k_i_A_adv*self.diff_i_B_adv
+                twist.linear.x = self.k_p_B_adv*self.diff_p_B_adv + self.k_i_B_adv*self.diff_i_B_adv
                 if math.fabs(self.diff_p_B_rot) > 0.5:
                     twist.linear.x = 0.1
                 self.vel_pub.publish(twist)
 
-            # 敵が近いときのVF VF of C
-            if self.VF_change_Flag == 3:
-                twist.linear.x = -1.5
-                if math.fabs(self.AngleEnemy_AR) < 90*3.141592/180:#相手に背を向けないように動こう
-                    twist.angular.z = self.k_p_C_rot * self.AngleEnemy_AR*1.0/(180*3.141592/180)
-                else:
-                    twist.angular.z = 0.0
-                self.vel_pub.publish(twist)
-
-            #相手の方向を向く
-            if self.VF_change_Flag == 4:
-                twist.linear.x = 0
+            #回避
+            elif self.VF_change_Flag == 3:
+                #目標角速度算出
                 target_th = math.atan2(self.enemy_pose.position.y-self.my_pose.position.y,
                                 self.enemy_pose.position.x-self.my_pose.position.x)
                 q = self.my_pose.orientation
                 euler = tf.transformations.euler_from_quaternion((q.x,q.y,q.z,q.w))
                 th = euler[2]
-                diff = target_th - th
-                if diff > math.pi:
-                    diff -= math.pi
-                elif diff < -math.pi:
-                    diff += math.pi
-                twist.angular.z = self.k_p_turn*diff
+                diff_th = target_th - th
+                if diff_th > math.pi:
+                    diff_th -= math.pi
+                elif diff_th < -math.pi:
+                    diff_th += math.pi
+
+                if diff_th < math.pi/9:
+                    self.diff_i_esc = 0
+                else:
+                    self.diff_i_esc += diff_th
+                twist.angular.z = self.k_p_esc*diff_th + self.k_i_esc * self.diff_i_esc
+                #目標後速度算出
+                now = rospy.Time.now().to_sec()
+                diff = now - self.VF_receive_time
+                twist.linear.x = -self.k_p_adv * diff
+                if twist.linear.x < -1.5:
+                    twist.linear.x = -1.5
                 self.vel_pub.publish(twist)
-###########################################################################
+
+            #相手の方を向く
+            elif self.VF_change_Flag == 4:
+                #目標角速度算出
+                target_th = math.atan2(self.enemy_pose.position.y-self.my_pose.position.y,
+                                self.enemy_pose.position.x-self.my_pose.position.x)
+                q = self.my_pose.orientation
+                euler = tf.transformations.euler_from_quaternion((q.x,q.y,q.z,q.w))
+                th = euler[2]
+                diff_th = target_th - th
+                #角度丸め込み
+                if diff_th > math.pi:
+                    diff_th -= math.pi
+                elif diff_th < -math.pi:
+                    diff_th += math.pi
+
+                if diff_th < math.pi/9:
+                    self.diff_i_turn = 0
+                else:
+                    self.diff_i_turn += diff_th
+                twist.angular.z = self.k_p_turn*diff_th + self.k_i_turn * self.diff_i_turn
+
+                #時間がたったら敵に近づいて回避状態に入る
+                now = rospy.Time.now().to_sec()
+                diff = now - self.VF_receive_time
+                if diff < 4:
+                    twist.linear.x = 0
+                else:
+                    twist.linear.x = 0.01
+                
+                self.vel_pub.publish(twist)
+            
+            elif self.VF_change_Flag == 5:
+                #VF_B と回避のつなぎ(滑り防止)
+                twist.linear.x = 0.5
+                #twist.angular.z = 0.0
+                self.vel_pub.publish(twist)
+
+            ###########################################################################
 
             # 相対位置・向きのpublish
             self.relative_pose_pub.publish(pose)
@@ -210,7 +269,7 @@ class EnemyBot(object):
                 self.ColorFlag.append(1)
             else :
                 self.ColorFlag.append(0)
-            if self.GreenSize > 0:
+            if self.GreenSize > 1000: #あまり見えない時は深追いしない
                 self.ColorFlag.append(1)
             else :
                 self.ColorFlag.append(0)
@@ -518,9 +577,16 @@ class EnemyBot(object):
                     enemy_angle = 180*3.141592/180 - temp_theta    
         return(enemy_angle)
 
-
     def VFFlagCallback(self, data):
         self.VF_change_Flag = data.flag.data
+        self.reset_diff()
+        self.VF_receive_time = rospy.Time.now().to_sec()
+        #STOP
+        if self.VF_change_Flag ==-1:
+            twist = Twist()
+            twist.angular.z = 0
+            twist.linear.x = 0
+            self.vel_pub.publish(twist)
         return VisualFeedbackFlagResponse(True)
 
     def imageCallback(self, data):
@@ -541,6 +607,12 @@ class EnemyBot(object):
         #print('(x,y)' , self.Relative_Pose_x , self.Relative_Pose_y)
         #print('(Green x,y,h)=' , self.GreenCenter_X , self.GreenCenter_Y , self.Green_Size_h)
         #print('()=' , self.cam_AR_size,self.GreenSize)
+        
+        # for rviz
+        #msg = self.bridge.cv2_to_imgmsg(self.img, encoding="bgr8")
+        #self.image_pub.publish(msg)
+        #rospy.sleep(0.001)
+
         cv2.imshow("Image window", self.img)
         cv2.waitKey(1)
 
