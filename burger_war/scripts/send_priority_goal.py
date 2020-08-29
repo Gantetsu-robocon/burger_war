@@ -24,10 +24,9 @@ from burger_war.srv import DesiredPose, VisualFeedbackFlag
 from std_srvs.srv import Empty,EmptyResponse
 
 #Import other program
-import def_state
 from server_receiver import ServerReceiver
         
-class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
+class SendPriorityGoal(ServerReceiver):
     def __init__(self):
         super(SendPriorityGoal,self).__init__()
         #Get parameter
@@ -54,8 +53,8 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
         self.vf_flag_call = rospy.ServiceProxy("vf_flag", VisualFeedbackFlag) 
 
         #Action Client
-        self.ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
-        self.ac.wait_for_server()
+        #self.ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+        #self.ac.wait_for_server()
 
         #Publisher for rviz
         self.goal_pub = rospy.Publisher("desired_goal",PoseStamped, queue_size=1)
@@ -89,21 +88,18 @@ class SendPriorityGoal(ServerReceiver): #ServerReceiverの継承
                             self.enemy_pose.pose.position.x-self.my_pose.pose.position.x)
             x = self.enemy_pose.pose.position.x - self.enemy_target_offset*math.cos(th)
             y = self.enemy_pose.pose.position.y - self.enemy_target_offset*math.sin(th)
-            goal.pose.position.x = x
-            goal.pose.position.y = y
             q = tf.transformations.quaternion_from_euler(0,0,th)
-            goal.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
         elif type(target) is unicode or type(target) is str:
-            goal.pose.position.x = self.wall_target_states[target]["pose"][0]
-            goal.pose.position.y = self.wall_target_states[target]["pose"][1]
+            x = self.wall_target_states[target]["pose"][0]
+            y = self.wall_target_states[target]["pose"][1]
             q = tf.transformations.quaternion_from_euler(0,0,self.wall_target_states[target]["pose"][2])
-            goal.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
         elif type(target) is list:
-            goal.pose.position.x = target[0]
-            goal.pose.position.y = target[1]
+            x = target[0]
+            y = target[1]
             q = tf.transformations.quaternion_from_euler(0,0,target[2])
-            goal.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
-            
+        goal.pose.position.x = x
+        goal.pose.position.y = y
+        goal.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
         self.goal_pub.publish(goal) #for rviz
         self.desired_pose_call(goal)
 

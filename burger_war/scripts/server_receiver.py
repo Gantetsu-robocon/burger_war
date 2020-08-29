@@ -32,8 +32,13 @@ class ServerReceiver(object):
         current_dir = rospy.get_param("~current_dir")
 
         #Initialize wall target states
-        with open(current_dir+'/marker_pose.json') as f:
-            self.wall_target_states = json.load(f)
+        if self.side == "r":
+            with open(current_dir+'/marker_pose.json') as f:
+                self.wall_target_states = json.load(f)
+        else:
+            with open(current_dir+'/marker_pose_blue.json') as f:
+                self.wall_target_states = json.load(f)
+
 
         #Initialize enemy target states
         if self.side == "r":

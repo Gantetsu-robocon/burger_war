@@ -239,23 +239,24 @@ class GlobalPathPlan(object):
         return math.atan2(pos2[1]-pos1[1], pos2[0]-pos1[0])
 
     def searchPath(self):
-        if self.area_s != self.area_g:
-            self.connect_node()
-            self.calc_weight()
-            self.graph = Graph(self.node_s, self.node_t, self.pos, self.weight)
-            self.graph_path = self.graph.search(0, 9)
-            desired_path = self.add_theta(self.graph_path)
-        else:
-            desired_path = []
-            #theta_sg = self.calc_angle(self.start, self.goal)
-            ## if math.cos(theta_sg - self.goal[2]) < 0:
-            ##     theta_sg += math.pi
+        #if self.area_s != self.area_g:
+            #self.connect_node()
+            #self.calc_weight()
+            #self.graph = Graph(self.node_s, self.node_t, self.pos, self.weight)
+            #self.graph_path = self.graph.search(0, 9)
+            #desired_path = self.add_theta(self.graph_path)
+        #else:
+            #desired_path = []
+            ##theta_sg = self.calc_angle(self.start, self.goal)
+            ### if math.cos(theta_sg - self.goal[2]) < 0:
+            ###     theta_sg += math.pi
 
-            #desired_path.append([self.start[0], self.start[1], theta_sg])
-            #desired_path.append([self.goal[0], self.goal[1], theta_sg])
-            desired_path.append(self.goal)
+            ##desired_path.append([self.start[0], self.start[1], theta_sg])
+            ##desired_path.append([self.goal[0], self.goal[1], theta_sg])
+            #desired_path.append(self.goal)
+        desired_path = []
+        desired_path.append(self.goal)
         return desired_path
-
 
 class move():
     def __init__(self):
