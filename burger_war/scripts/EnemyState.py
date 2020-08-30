@@ -303,7 +303,7 @@ class EnemyBot(object):
     def ColorCenter(self):
         hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
         hsv_min = np.array([0,64,0])
-        hsv_max = np.array([30,255,255])
+        hsv_max = np.array([10,255,255])
         mask1 = cv2.inRange(hsv_img, hsv_min, hsv_max)
         hsv_min = np.array([150,64,0])
         hsv_max = np.array([179,255,255])
@@ -353,7 +353,7 @@ class EnemyBot(object):
     def GreenColor(self):
         hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
         color_min = np.array([30,64,150])
-        color_max = np.array([90,255,255])
+        color_max = np.array([100,255,255])
         color_mask = cv2.inRange(hsv_img, color_min, color_max)
         bin_img = cv2.bitwise_and(self.img, self.img, mask = color_mask)
         bin_img = cv2.cvtColor(bin_img, cv2.COLOR_BGR2GRAY)
