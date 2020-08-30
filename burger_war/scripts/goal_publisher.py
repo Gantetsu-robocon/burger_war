@@ -68,18 +68,28 @@ class move():
             return
         
         self.ac.cancel_all_goals()
-        self.ac.send_goal(self.goal, done_cb=self.done_cb)
-    
-    def done_cb(self,status, result):
-        print "status:",status
-        print "result:",result
-        if status == 3:
-            print "Goal reached"
+        self.ac.send_goal(self.goal)
+        self.send_goal = False
+
+        succeeded = self.ac.wait_for_result(rospy.Duration(10))
+
+        if succeeded:
             try:
                 self.service_call()
             except rospy.ServiceException, e:
                 print ("Service call failed: %s" % e)
-            self.send_goal = False
+            return
+    
+    #def done_cb(self,status, result):
+        #print "status:",status
+        #print "result:",result
+        #if status == 3:
+            #print "Goal reached"
+            #try:
+                #self.service_call()
+            #except rospy.ServiceException, e:
+                #print ("Service call failed: %s" % e)
+            #self.send_goal = False
 
     def movebaseCallback(self, data):
         if len(data.status_list) > 0:
@@ -90,7 +100,6 @@ class move():
         self.ac.cancel_all_goals()
         self.send_goal = False
         self.succeeded = False
-
         return EmptyResponse()
 
 if __name__ == '__main__':

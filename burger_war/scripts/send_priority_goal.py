@@ -96,6 +96,7 @@ class SendPriorityGoal(ServerReceiver):
         goal.pose.position.x = x
         goal.pose.position.y = y
         goal.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
+        self.goal_reached = False
         self.goal_pub.publish(goal) #for rviz
         self.desired_pose_call(goal)
 
@@ -212,7 +213,7 @@ class SendPriorityGoal(ServerReceiver):
                 pre_state = self.vf(pre_state,target)
             
             #elif (ene_is_close and find_enemy) or vel_time_diff > self.stack_time: #or self.color_flag[3]: 
-            elif ene_is_close or vel_time_diff > self.stack_time: #or self.color_flag[3]: 
+            elif ene_is_close or vel_time_diff > self.stack_time or self.color_flag[3]: 
                 #回避
                 self.escape_flag[1] = 1
                 if not pre_state =="Escape":
