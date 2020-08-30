@@ -11,16 +11,9 @@ from math import cos
 
 #Import ROS message type
 from geometry_msgs.msg import PoseStamped, Quaternion, Point
-from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String, Int16MultiArray, Int8, Bool
 from sensor_msgs.msg import LaserScan
-
-class Target(object):
-    def __init__(self,position):
-        self.name = "n"
-        self.position = position
-        self.time = 0
 
 class ServerReceiver(object):
     def __init__(self):

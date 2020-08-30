@@ -3,18 +3,13 @@
 
 #Import
 import rospy
-import json
 import numpy as np
 import tf
-import sys
-import os
 import actionlib
-import copy
 import time
 import math
 
 #Import ROS topic type
-from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped, Quaternion, Twist, Pose
 from std_msgs.msg import String, Int16MultiArray, Int8, ColorRGBA
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
@@ -100,6 +95,7 @@ class SendPriorityGoal(ServerReceiver):
         goal.pose.position.x = x
         goal.pose.position.y = y
         goal.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
+        self.goal_reached = False
         self.goal_pub.publish(goal) #for rviz
         self.desired_pose_call(goal)
 
