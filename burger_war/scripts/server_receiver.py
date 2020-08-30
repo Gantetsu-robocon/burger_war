@@ -11,12 +11,6 @@ from math import cos
 
 #Import ROS message type
 from geometry_msgs.msg import PoseStamped, Quaternion, Point
-<<<<<<< HEAD
-from nav_msgs.msg import Odometry
-from std_msgs.msg import String, Int16MultiArray, Int8, Bool
-from sensor_msgs.msg import LaserScan
-
-=======
 from std_msgs.msg import String, Int16MultiArray, Bool
 from sensor_msgs.msg import LaserScan
 
@@ -26,7 +20,6 @@ from sensor_msgs.msg import LaserScan
         #self.position = position
         #self.time = 0
 
->>>>>>> obonai
 class ServerReceiver(object):
     def __init__(self):
         #Get parameter
