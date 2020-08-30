@@ -5,16 +5,28 @@
 import rospy
 import json
 import tf
-import copy
+from copy import deepcopy
 import numpy as np
 from math import cos
 
 #Import ROS message type
 from geometry_msgs.msg import PoseStamped, Quaternion, Point
+<<<<<<< HEAD
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String, Int16MultiArray, Int8, Bool
 from sensor_msgs.msg import LaserScan
 
+=======
+from std_msgs.msg import String, Int16MultiArray, Bool
+from sensor_msgs.msg import LaserScan
+
+#class Target(object):
+    #def __init__(self,position):
+        #self.name = "n"
+        #self.position = position
+        #self.time = 0
+
+>>>>>>> obonai
 class ServerReceiver(object):
     def __init__(self):
         #Get parameter
@@ -40,7 +52,7 @@ class ServerReceiver(object):
             self.enemy_target_states = {"RE_B":"n","RE_R":"n","RE_L":"n"}
 
         #Copy previous target state
-        self.wall_target_states_pre = copy.deepcopy(self.wall_target_states)
+        self.wall_target_states_pre = deepcopy(self.wall_target_states)
 
         #Initialize robot position
         self.enemy_pose = PoseStamped()
