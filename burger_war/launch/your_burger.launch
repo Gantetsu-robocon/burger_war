@@ -18,11 +18,11 @@
       <param name="close_th" value="0.30"/> <!--かなり近い所にマーカーがあるかどうか-->
       <param name="stack" value="2.5"/> <!--スタックタイム-->
       <param name="enemy_find_time" value="13.0"/> <!--初期状態を持続する最短時間-->
-      <param name="enemy_target_offset" value="0.1"/> <!--敵を目標とするときに中心からどれだけオフセットを取るか-->
+      <param name="enemy_target_offset" value="0.15"/> <!--敵を目標とするときに中心からどれだけオフセットを取るか-->
       <param name="current_dir" value= "$(find burger_war)/scripts"/>
     </node>
     
-    <node pkg="burger_war" type="globalPlanner2.py" name="globalPlanner" output="screen"/>
+    <node pkg="burger_war" type="goal_publisher.py" name="goal_publisher" output="screen"/>
     <!-- localization & navigation -->
     <include file="$(find burger_navigation)/launch/burger_navigation.launch"/>
 

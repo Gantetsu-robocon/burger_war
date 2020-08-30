@@ -3,21 +3,16 @@
 
 #Import
 import rospy
-import json
 import numpy as np
 import tf
-import sys
-import os
 import actionlib
-import copy
 import time
-import math
+from math import atan2, cos, sin
 
 #Import ROS topic type
-from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped, Quaternion, Twist, Pose
 from std_msgs.msg import String, Int16MultiArray, Int8, ColorRGBA
-from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+#from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 
 #Import ROS service type
 from burger_war.srv import DesiredPose, VisualFeedbackFlag
@@ -81,13 +76,11 @@ class SendPriorityGoal(ServerReceiver):
         return EmptyResponse()
 
     def send_goal(self,target):
-        goal = PoseStamped()
-        goal.header.frame_id = "map"
         if target == "Enemy":
-            th = math.atan2(self.enemy_pose.pose.position.y-self.my_pose.pose.position.y,
+            th = atan2(self.enemy_pose.pose.position.y-self.my_pose.pose.position.y,
                             self.enemy_pose.pose.position.x-self.my_pose.pose.position.x)
-            x = self.enemy_pose.pose.position.x - self.enemy_target_offset*math.cos(th)
-            y = self.enemy_pose.pose.position.y - self.enemy_target_offset*math.sin(th)
+            x = self.enemy_pose.pose.position.x - self.enemy_target_offset*cos(th)
+            y = self.enemy_pose.pose.position.y - self.enemy_target_offset*sin(th)
             q = tf.transformations.quaternion_from_euler(0,0,th)
         elif type(target) is unicode or type(target) is str:
             x = self.wall_target_states[target]["pose"][0]
@@ -97,6 +90,9 @@ class SendPriorityGoal(ServerReceiver):
             x = target[0]
             y = target[1]
             q = tf.transformations.quaternion_from_euler(0,0,target[2])
+
+        goal = PoseStamped()
+        goal.header.frame_id = "map"
         goal.pose.position.x = x
         goal.pose.position.y = y
         goal.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
