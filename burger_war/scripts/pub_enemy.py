@@ -39,14 +39,10 @@ class PubEnemyPose():
         self.flag_lidar = False
         self.t_camera = PoseStamped()
         self.t_lidar = PoseStamped()
-        if self.side == "r":
-            pose = Point(1.3,0,0)
-            q = tf.transformations.quaternion_from_euler(0,0,np.pi)
-            orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
-        else:
-            pose = Point(-1.3,0,0)
-            q = tf.transformations.quaternion_from_euler(0,0,0)
-            orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
+
+        pose = Point(1.3,0,0)
+        q = tf.transformations.quaternion_from_euler(0,0,np.pi)
+        orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
         self.t_camera.pose.position = pose
         self.t_camera.pose.orientation = orientation
@@ -102,7 +98,7 @@ class PubEnemyPose():
         rate = rospy.Rate(self.rate)
         
         while not rospy.is_shutdown():
-            self.lisn_enemy_camera()
+            #self.lisn_enemy_camera()
             self.lisn_enemy_lidar()
             if (self.flag_color==True) or (self.flag_lidar==True):
                 self.pub_enemy_abs()

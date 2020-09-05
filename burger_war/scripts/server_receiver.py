@@ -41,32 +41,14 @@ class ServerReceiver(object):
         #Initialize enemy target states
         if self.side == "r":
             self.enemy_target_states = {"BL_B":"n","BL_R":"n","BL_L":"n"}
+            self.my_target_states = {"RE_B":"n","RE_R":"n","RE_L":"n"}
         else:
             self.enemy_target_states = {"RE_B":"n","RE_R":"n","RE_L":"n"}
-
-        #Copy previous target state
-        self.wall_target_states_pre = deepcopy(self.wall_target_states)
+            self.my_target_states = {"BL_B":"n","BL_R":"n","BL_L":"n"}
 
         #Initialize robot position
         self.enemy_pose = PoseStamped()
         self.my_pose = PoseStamped()
-        if self.side == "r":
-            self.enemy_pose.pose.position = Point(1.3,0,0)
-            q = tf.transformations.quaternion_from_euler(0,0,np.pi)
-            self.enemy_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
-
-            self.enemy_pose.pose.position = Point(-1.3,0,0)
-            q = tf.transformations.quaternion_from_euler(0,0,0)
-            self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
-
-        else:
-            self.enemy_pose.pose.position = Point(-1.3,0,0)
-            q = tf.transformations.quaternion_from_euler(0,0,0)
-            self.enemy_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
-
-            self.my_pose.pose.position = Point(1.3,0,0)
-            q = tf.transformations.quaternion_from_euler(0,0,np.pi)
-            self.my_pose.pose.orientation = Quaternion(x=q[0],y=q[1],z=q[2],w=q[3])
 
         #Initialize other variables
         self.passed_time = 0
@@ -89,10 +71,11 @@ class ServerReceiver(object):
         for info in target_data:
             target_name = info.get("name")
             if target_name in self.wall_target_states:
-                self.wall_target_states_pre[target_name]["player"] = self.wall_target_states[target_name]["player"]
                 self.wall_target_states[target_name]["player"] = info.get("player")
             elif target_name in self.enemy_target_states:
                 self.enemy_target_states[target_name] = info.get("player")
+            elif target_name in self.my_target_states:
+                self.my_target_states[target_name] = info.get("player")
     
     #Callback method
     def serverCallback(self, data):

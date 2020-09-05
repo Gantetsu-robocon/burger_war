@@ -25,12 +25,6 @@ class PubEnemyPose():
 
         #Initilize
         self.my_ps = PoseStamped()
-        self.my_ps.pose.position.x = -1.3
-        q = tf.transformations.quaternion_from_euler(0.0, 0.0, 0.0)
-        rotation = Quaternion(*q)
-        self.my_ps.pose.orientation = rotation
-
-        
 
     def lis_pub_my_ps(self):
         rate = rospy.Rate(self.rate)
@@ -57,4 +51,3 @@ if __name__ == '__main__':
         pub_self.lis_pub_my_ps()
 
     except rospy.ROSInterruptException: pass
-

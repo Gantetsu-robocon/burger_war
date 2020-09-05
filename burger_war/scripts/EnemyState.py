@@ -200,9 +200,9 @@ class EnemyBot(object):
                 th = euler[2]
                 diff_th = target_th - th
                 if diff_th > math.pi:
-                    diff_th -= math.pi
+                    diff_th -= 2*math.pi
                 elif diff_th < -math.pi:
-                    diff_th += math.pi
+                    diff_th += 2*math.pi
 
                 if diff_th < math.pi/9:
                     self.diff_i_esc = 0
@@ -228,9 +228,9 @@ class EnemyBot(object):
                 diff_th = target_th - th
                 #角度丸め込み
                 if diff_th > math.pi:
-                    diff_th -= math.pi
+                    diff_th -= 2*math.pi
                 elif diff_th < -math.pi:
-                    diff_th += math.pi
+                    diff_th += 2*math.pi
 
                 if diff_th < math.pi/9:
                     self.diff_i_turn = 0

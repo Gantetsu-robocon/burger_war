@@ -168,7 +168,7 @@ class SendPriorityGoal(ServerReceiver):
             #敵の位置が一定時間以上送られてこない時、敵の位置をリセット(遠くへ飛ばす)
             now = rospy.Time.now().to_sec()
             if now - self.enemy_catch_time > 12:
-                self.enemy_pose.pose.position.x = 3.0
+                self.enemy_pose.pose.position.x = 1.3
                 self.enemy_pose.pose.position.y = 3.0
 
             #vf_flag_call->0:vfしない、1:壁のマーカーを取りに行くvf_A→廃止、2:敵のマーカーと取りに行くvf_B、3:回避 vf_C, 4:敵を向く, -1:確実に止まる 
@@ -179,6 +179,11 @@ class SendPriorityGoal(ServerReceiver):
             for enemy_target in self.enemy_target_states:
                 if self.enemy_target_states[enemy_target] == self.side :
                     count += 1
+            #自分の的が全て取られた時はTurn to enemyしない
+            my_count = 0
+            for my_target in self.my_target_states:
+                if self.my_target_states[my_target] == self.enemy_side :
+                    my_count += 1
             if count ==0:
                 self.vf_B_dist = 1.2
             elif count ==1:
@@ -222,14 +227,16 @@ class SendPriorityGoal(ServerReceiver):
                     self.vf_flag_call(Int8(data=3))
                     pre_state = "Escape"
                     self.show_state_and_target(pre_state)
+                    start_time = rospy.Time.now().to_sec()
                     while not rospy.is_shutdown():
-                        if self.enemy_distance() > self.enemy_distance_th or self.near_backwall:
+                        passed_time = rospy.Time.now().to_sec() - start_time
+                        if ( passed_time > 1.0 and self.enemy_distance() > self.enemy_distance_th) or self.near_backwall:
                             self.vf_flag_call(Int8(data=-1))
                             pre_state = ""
                             break
                         r.sleep()
             
-            elif (ene_is_near and self.lidar_flag) or ene_is_near_small:
+            elif my_count !=3 and((ene_is_near and self.lidar_flag) or ene_is_near_small):
                 #相手の方を向く
                 if not pre_state =="Visual_Feedback":
                     if (not pre_state == "Turn_to_the_enemy" ) or update_enemy:
