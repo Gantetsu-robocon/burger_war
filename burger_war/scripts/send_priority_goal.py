@@ -5,7 +5,7 @@
 import rospy
 import numpy as np
 import tf
-import actionlib
+#import actionlib
 import time
 from math import atan2, cos, sin
 
@@ -318,7 +318,7 @@ class SendPriorityGoal(ServerReceiver):
                         pre_state = "Go_to_the_nearest_marker"
                         self.show_state_and_target(pre_state,target)
                 
-                if pre_state == "Go_to_the_nearset_marker":
+                if pre_state == "Go_to_the_nearest_marker":
                     if self.goal_reached or self.wall_target_states[target]["player"]==self.side:
                         self.escape_flag = [0,0]
                         self.cancel_goal_call()
@@ -329,7 +329,6 @@ class SendPriorityGoal(ServerReceiver):
                 #条件がそろえばvf
                 pre_state = self.vf(pre_state,target)
                 r.sleep()
-        
 
 if __name__ == '__main__':
     rospy.init_node('send_priority_goal')

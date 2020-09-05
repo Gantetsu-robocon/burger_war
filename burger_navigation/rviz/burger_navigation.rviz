@@ -39,7 +39,7 @@ Visualization Manager:
       Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.0299999993
         Value: Lines
@@ -52,7 +52,7 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 20
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -264,7 +264,7 @@ Visualization Manager:
           Topic: /move_base/DWAPlannerROS/global_plan
           Unreliable: false
           Value: true
-      Enabled: true
+      Enabled: false
       Name: Global Map
     - Class: rviz/Group
       Displays:
@@ -309,7 +309,7 @@ Visualization Manager:
           Topic: /move_base/DWAPlannerROS/local_plan
           Unreliable: false
           Value: true
-      Enabled: true
+      Enabled: false
       Name: Local Map
     - Alpha: 1
       Arrow Length: 0.0500000007
