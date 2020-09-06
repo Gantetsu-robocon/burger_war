@@ -165,13 +165,18 @@ class SendPriorityGoal(ServerReceiver):
                     update_enemy = False
             except:
                 pass
-            #敵の位置が一定時間以上送られてこない時、敵の位置をリセット(遠くへ飛ばす)
+            #敵の位置が一定時間以上送られてこない時、敵の位置をリセット
             now = rospy.Time.now().to_sec()
-            if now - self.enemy_catch_time > 12:
+            if now - self.enemy_catch_time > 24:
+                self.enemy_pose.pose.position.x = -1.3
+                self.enemy_pose.pose.position.y = 0.0
+                self.enemy_pose_reset = False
+            elif now - self.enemy_catch_time > 12:
                 self.enemy_pose.pose.position.x = 1.3
-                self.enemy_pose.pose.position.y = 3.0
+                self.enemy_pose.pose.position.y = 0.0
+                self.enemy_pose_reset = True
 
-            #vf_flag_call->0:vfしない、1:壁のマーカーを取りに行くvf_A→廃止、2:敵のマーカーと取りに行くvf_B、3:回避 vf_C, 4:敵を向く, -1:確実に止まる 
+            #vf_flag_call->0:vfしない、1:壁のマーカーを取りに行くvf_A→廃止、2:敵のマーカーを取りに行くvf_B、3:回避 vf_C, 4:敵を向く, -1:確実に止まる 
             #color_flag->0:赤い風船、1:壁のマーカー、2:敵のマーカー、3:敵のAR、4:壁のAR
 
             #敵の的を2個以上取っていない状態ならすぐに敵の方へvf
@@ -184,6 +189,7 @@ class SendPriorityGoal(ServerReceiver):
             for my_target in self.my_target_states:
                 if self.my_target_states[my_target] == self.enemy_side :
                     my_count += 1
+
             if count ==0:
                 self.vf_B_dist = 1.2
             elif count ==1:
