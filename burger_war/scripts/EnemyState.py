@@ -244,7 +244,7 @@ class EnemyBot(object):
                 if diff < 4:
                     twist.linear.x = 0
                 else:
-                    twist.linear.x = 0.01
+                    twist.linear.x = 0.1
                 
                 self.vel_pub.publish(twist)
             

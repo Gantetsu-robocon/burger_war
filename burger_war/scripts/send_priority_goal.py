@@ -63,7 +63,7 @@ class SendPriorityGoal(ServerReceiver):
         self.initial_end_dist = self.enemy_distance_th #この距離まで敵に近づくまでは順番に取る
         self.initial_state = True 
         self.target_number = 0 
-        self.target_order = [[-0.951,-0.33,-np.pi/6],[-0.471,-0.2,np.pi/6],
+        self.target_order = [[-0.94,-0.33,-np.pi/6],[-0.471,-0.2,np.pi/6],
             [0,-0.53,np.pi],[0,-0.53,np.pi/2],[0,-0.53,0]] #的を取る順番
         self.escape_flag = [0,0] #両方Trueの時に敵から遠い的を取りに行く 1:vf状態に入ったか 2:escape状態に入ったか
         
@@ -236,7 +236,7 @@ class SendPriorityGoal(ServerReceiver):
                     start_time = rospy.Time.now().to_sec()
                     while not rospy.is_shutdown():
                         passed_time = rospy.Time.now().to_sec() - start_time
-                        if ( passed_time > 1.0 and self.enemy_distance() > self.enemy_distance_th) or self.near_backwall:
+                        if ( passed_time > 1.0 and self.enemy_distance() > self.enemy_distance_th+0.2) or self.near_backwall:
                             self.vf_flag_call(Int8(data=-1))
                             pre_state = ""
                             break
