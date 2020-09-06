@@ -352,7 +352,7 @@ class EnemyBot(object):
     # 緑色マーカの認識
     def GreenColor(self):
         hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
-        color_min = np.array([30,64,150])
+        color_min = np.array([30,64,0])
         color_max = np.array([100,255,255])
         color_mask = cv2.inRange(hsv_img, color_min, color_max)
         bin_img = cv2.bitwise_and(self.img, self.img, mask = color_mask)
